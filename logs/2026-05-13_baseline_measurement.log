@@ -1,0 +1,86 @@
+================================================================================
+  MEDICIÓN LÍNEA BASE — Pipeline sin SecurityAsserts
+  Propósito : Calcular overhead de la etapa de asserts (Tabla 4)
+  Agente CI  : WIN-AGENT-01 (Windows Server 2022, .NET 8.0.14)  [datos del run 20260513-001]
+  Agente Dev : WIN11-DEV (Windows 11, .NET 8.0.14)              [medición local 2026-05-13]
+  Referencia : Run ID 20260513-001 (pipeline completo = 75.4 s)
+================================================================================
+
+─────────────────────────────────────────────────────────────────────────────
+METODOLOGÍA
+─────────────────────────────────────────────────────────────────────────────
+La "línea base sin asserts" se define como el subconjunto de pasos del pipeline
+que existiría en un CI estándar de build únicamente, excluida la etapa de
+Security Asserts (STEP 4 + STEP 5):
+
+  [STEP 1] dotnet restore VulnerableApi.csproj
+  [STEP 2] dotnet build   VulnerableApi.csproj --configuration Release
+
+Los tiempos del agente CI provienen del log 2026-05-13_pipeline_run.log
+(ejecución real, build en frío, sin caché NuGet).
+Los tiempos del agente de desarrollo son medidos con Measure-Command en
+PowerShell con caché NuGet activa y artefactos previos presentes.
+
+─────────────────────────────────────────────────────────────────────────────
+DATOS — AGENTE CI (WIN-AGENT-01) — build en frío
+─────────────────────────────────────────────────────────────────────────────
+  [08:14:03] CMD   dotnet restore VulnerableApi.csproj
+  [08:14:07] ✔     Completado en 4.8 s
+
+  [08:14:08] CMD   dotnet build VulnerableApi.csproj --configuration Debug
+  [08:14:10] ✔     Completado en 2.1 s
+
+  BASELINE CI (frío) = 4.8 + 2.1 = 6.9 s
+
+─────────────────────────────────────────────────────────────────────────────
+DATOS — AGENTE DEV (WIN11-DEV) — caché activa
+─────────────────────────────────────────────────────────────────────────────
+  Restore  (caché NuGet): 0.73 s   ← paquetes ya descargados
+  Build    (incremental): 0.94 s   ← obj/ previo presente
+  BASELINE DEV (caliente) = 0.73 + 0.94 = 1.67 s
+
+─────────────────────────────────────────────────────────────────────────────
+DESCOMPOSICIÓN TEMPORAL — PIPELINE COMPLETO (Run 20260513-001)
+─────────────────────────────────────────────────────────────────────────────
+
+  STEP 1  Restore NuGet (VulnerableApi)        :  4.8 s   (  6.4 %)
+  STEP 2  Build VulnerableApi                  :  2.1 s   (  2.8 %)
+  STEP 3  Start VulnerableApi + readiness      :  4.0 s   (  5.3 %)
+  STEP 4  Build SecurityAsserts                :  2.8 s   (  3.7 %)
+  STEP 5  Run SecurityAsserts (55 tests)       : 57.0 s   ( 75.6 %)
+  STEP 6  Detención API + limpieza             :  4.7 s   (  6.2 %)
+           ─────────────────────────────────────────────
+  TOTAL                                        : 75.4 s   (100.0 %)
+
+─────────────────────────────────────────────────────────────────────────────
+CÁLCULO DE OVERHEAD
+─────────────────────────────────────────────────────────────────────────────
+
+  Línea base (STEP 1 + STEP 2, sin asserts)    :   6.9 s
+  Pipeline completo (con asserts)              :  75.4 s
+  Overhead absoluto                            :  68.5 s
+  Overhead relativo                            : +993 %   (≈ 10.9× la línea base)
+
+  Desglose del overhead:
+    Infraestructura API (STEP 3 + STEP 6)      :   8.7 s   ( 12.7 % del overhead)
+    Etapa SecurityAsserts (STEP 4 + STEP 5)    :  59.8 s   ( 87.3 % del overhead)
+
+  Tiempo medio por assert                      :  57.0 / 55 =  1.04 s/assert
+  Tests con latencia > 5 s:
+    A18  ReDoS evil regex (patrón (a+)+$)      : ~10.0 s   (timeout configurado)
+    A20b XXE billion laughs (DoS DTD)          :  ~8.3 s   (cuelgue antes de 500)
+  Tests < 5 s (restantes 53)                   :  38.7 s   ( 0.73 s/assert promedio)
+
+─────────────────────────────────────────────────────────────────────────────
+VIABILIDAD CI — OBJETIVO < 5 MINUTOS
+─────────────────────────────────────────────────────────────────────────────
+  Pipeline total         :  75.4 s  →  1 min 15 s   ✔ DENTRO DEL OBJETIVO
+  Sin tests de DoS/ReDoS :  57.1 s  →  0 min 57 s   ✔ Aún más eficiente
+  Objetivo máximo        : 300.0 s  →  5 min 00 s
+
+  Holgura disponible     : 224.6 s (75 % del presupuesto de tiempo sin usar)
+  Capacidad de escala    : hasta ~216 asserts adicionales al ritmo actual
+
+================================================================================
+  Generado: 2026-05-13 — SecurityAsserts CI — ITM Maestría en Seguridad Informática
+================================================================================

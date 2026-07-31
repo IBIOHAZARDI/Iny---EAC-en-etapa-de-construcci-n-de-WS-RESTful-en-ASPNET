@@ -1,0 +1,95 @@
+2026-05-13 08:14:13.001 INFO  [VulnerableApi] Application starting...
+2026-05-13 08:14:13.412 INFO  [VulnerableApi] Environment: Development
+2026-05-13 08:14:13.423 INFO  [VulnerableApi] ContentRoot: C:\Trabajo\Universidad\Desarrollo\VulnerableApi
+2026-05-13 08:14:13.511 INFO  [Microsoft.EntityFrameworkCore.Database.Command] Applying pending migrations...
+2026-05-13 08:14:13.712 INFO  [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (45ms) [Parameters=[], CommandText="CREATE TABLE IF NOT EXISTS 'Users' (...)"]
+2026-05-13 08:14:13.801 INFO  [VulnerableApi.Data.DataSeeder] Seeding admin@test.local with password Admin123!
+2026-05-13 08:14:13.813 INFO  [VulnerableApi.Data.DataSeeder] Seeding usera@test.local with password UserA123!
+2026-05-13 08:14:13.821 INFO  [VulnerableApi.Data.DataSeeder] Seeding userb@test.local with password UserB123!
+2026-05-13 08:14:13.901 INFO  [VulnerableApi.Data.DataSeeder] Seeding 10 products...
+2026-05-13 08:14:13.967 INFO  [VulnerableApi.Data.DataSeeder] Seeding 3 orders (UserA→1, UserB→3)
+2026-05-13 08:14:14.102 INFO  [Microsoft.Hosting.Lifetime] Now listening on: http://localhost:5000
+2026-05-13 08:14:14.111 INFO  [Microsoft.Hosting.Lifetime] Application started.
+
+2026-05-13 08:14:21.234 INFO  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"UserA123!"}
+2026-05-13 08:14:21.267 INFO  [VulnerableApi.Controllers.AuthController] Login success for usera@test.local — token issued
+2026-05-13 08:14:21.291 INFO  [VulnerableApi.Controllers.UsersController] GetUser id=3 — returning 200 OK
+2026-05-13 08:14:22.017 INFO  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"UserA123!"}
+2026-05-13 08:14:22.023 INFO  [VulnerableApi.Controllers.OrdersController] GetOrder id=3 — returning 200 OK
+2026-05-13 08:14:23.034 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.041 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.049 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.057 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.064 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.071 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.079 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.086 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.094 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:23.101 WARN  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"WrongPassword!"}
+2026-05-13 08:14:24.003 INFO  [VulnerableApi.Controllers.UsersController] GetUser id=2 (no auth) — returning 200 OK
+2026-05-13 08:14:25.011 INFO  [VulnerableApi.Controllers.UsersController] UpdateUser id=3 [requester=usera@test.local] — returning 200 OK
+2026-05-13 08:14:26.018 INFO  [VulnerableApi.Controllers.AdminController] DeleteUser id=3 [requester=usera@test.local, role=user] — returning 200 OK
+2026-05-13 08:14:27.024 INFO  [VulnerableApi.Controllers.AdminController] PromoteUser id=3 [requester=usera@test.local, role=user] — returning 200 OK
+2026-05-13 08:14:28.031 INFO  [VulnerableApi.Controllers.UsersController] GetUser id=2 [expired_jwt=true] — returning 200 OK
+2026-05-13 08:14:29.038 INFO  [VulnerableApi.Controllers.UsersController] GetUser id=2 [alg=none] — returning 200 OK
+2026-05-13 08:14:30.045 INFO  [VulnerableApi.Controllers.UsersController] UpdateUser id=2 mass_assignment role=admin — 200 OK
+2026-05-13 08:14:31.052 INFO  [VulnerableApi.Controllers.UsersController] GetUser id=2 — 200 OK (no hash in response)
+2026-05-13 08:14:32.059 INFO  [VulnerableApi.Controllers.AdminController] ListUsers — returning passwordHash fields in response
+
+2026-05-13 08:14:34.001 DEBUG [VulnerableApi.Middleware.SecurityHeadersMiddleware] No security headers middleware registered — skipping
+2026-05-13 08:14:39.008 DEBUG [VulnerableApi.Middleware.CorsMiddleware] Access-Control-Allow-Origin: * (wildcard CORS)
+2026-05-13 08:14:40.015 ERROR [VulnerableApi.Controllers.UsersController] Unhandled exception in GetUser(id=INVALID_ID_ABC)
+System.InvalidOperationException: Sequence contains no elements.
+   at System.Linq.ThrowHelper.ThrowNoElementsException()
+   at VulnerableApi.Controllers.UsersController.GetUser(Int32 id) in C:\Trabajo\Universidad\Desarrollo\VulnerableApi\Controllers\UsersController.cs:line 47
+   at lambda_method47(Closure, Object, Object[])
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(...)
+2026-05-13 08:14:41.022 INFO  [VulnerableApi.Controllers.ProductsController] CreateProduct — accepted 12.58 MB body (no size limit)
+
+2026-05-13 08:14:44.007 INFO  [VulnerableApi.Controllers.SearchController] Search query: name=' OR '1'='1 — raw SQL executed
+2026-05-13 08:14:44.013 DEBUG [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (4ms)
+  SELECT * FROM Products WHERE Name LIKE '%' OR '1'='1'%'
+  — returned 10 rows
+2026-05-13 08:14:45.019 ERROR [VulnerableApi.Controllers.SearchController] SQLite error: near "UNION": syntax error
+  at Microsoft.Data.Sqlite.SqliteException: SQLite Error 1: 'near "UNION": syntax error'.
+  at VulnerableApi.Controllers.SearchController.Search(String name) in SearchController.cs:line 34
+2026-05-13 08:14:46.026 INFO  [VulnerableApi.Controllers.ProductsController] Search result contains unescaped script tag in name field
+2026-05-13 08:14:47.033 INFO  [VulnerableApi.Controllers.ProductsController] Stored product with name: <img src=x onerror=alert(document.cookie)>
+2026-05-13 08:14:48.040 INFO  [VulnerableApi.Controllers.FilesController] Download file: ../../Windows/win.ini — resolved to C:\Windows\win.ini — returning 200 OK
+2026-05-13 08:14:49.047 INFO  [VulnerableApi.Controllers.FilesController] Download file: ..%2F..%2FWindows%2Fwin.ini — 200 OK
+
+2026-05-13 08:14:52.001 INFO  [VulnerableApi] HTTP request on port 5000 — no HTTPS redirect configured
+2026-05-13 08:14:56.008 INFO  [VulnerableApi] GET /swagger/index.html — 200 OK (Swagger enabled in non-dev env)
+2026-05-13 08:14:57.015 INFO  [VulnerableApi.Middleware.ApiVersionMiddleware] X-Api-Version: 1.0.0-dev+build.413
+
+2026-05-13 08:14:58.007 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF ping: url=http://127.0.0.1:5985/ — executing request
+2026-05-13 08:14:58.019 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF result: {"result":"reachable","responseTime":12}
+2026-05-13 08:14:59.026 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF ping: url=http://169.254.169.254/latest/ — executing request
+2026-05-13 08:14:59.033 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF result: {"result":"unreachable","responseTime":1231}
+2026-05-13 08:15:00.040 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF ping: url=http://192.168.1.1/ — executing request
+2026-05-13 08:15:01.047 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF ping: url=file:///C:/Windows/win.ini — rejected by Uri.CheckScheme
+2026-05-13 08:15:02.054 INFO  [VulnerableApi.Controllers.DiagnosticsController] SSRF ping (no auth) — 200 OK
+2026-05-13 08:15:03.061 INFO  [VulnerableApi.Controllers.DiagnosticsController] GET /diagnostics/exception — 200 OK (debug endpoint active)
+2026-05-13 08:15:04.068 INFO  [VulnerableApi.Controllers.AuthController] Login attempt: {"email":"usera@test.local","password":"UserA123!"}
+
+2026-05-13 08:15:05.012 INFO  [VulnerableApi.Controllers.FilesController] Upload: shell.aspx (1024 bytes, text/plain) — saved to /uploads/shell.aspx
+2026-05-13 08:15:07.019 INFO  [VulnerableApi.Controllers.UsersController] GetUser id=2 via JWT in query string access_token — 200 OK
+2026-05-13 08:15:08.026 WARN  [VulnerableApi.Controllers.SearchController] Regex evaluation started: pattern=(a+)+$ input=aaaaaaaaaaaaaaaaaaaaaaaaaX
+2026-05-13 08:15:18.034 ERROR [VulnerableApi.Controllers.SearchController] Regex timeout after 10000ms — TaskCanceledException
+
+2026-05-13 08:15:10.007 INFO  [VulnerableApi.Controllers.AuthController] Logout: returnUrl=http://evil.com/phishing — redirecting
+2026-05-13 08:15:11.014 INFO  [VulnerableApi.Controllers.AuthController] Logout: returnUrl=//evil.com — redirecting (protocol-relative)
+2026-05-13 08:15:12.021 INFO  [VulnerableApi.Controllers.ReportsController] Import XML — processing DTD entities
+2026-05-13 08:15:12.028 INFO  [VulnerableApi.Controllers.ReportsController] XXE entity resolved to: C:\Windows\win.ini — returning file content
+2026-05-13 08:15:13.035 ERROR [VulnerableApi.Controllers.ReportsController] OutOfMemoryException during billion laughs XML expansion
+System.OutOfMemoryException: Insufficient memory to continue execution.
+   at System.Xml.XmlReader.Read()
+   at VulnerableApi.Controllers.ReportsController.ImportReport() in ReportsController.cs:line 45
+
+2026-05-13 08:15:14.007 INFO  [VulnerableApi.Controllers.WebhooksController] Receive webhook (no signature header) — processed
+2026-05-13 08:15:15.014 INFO  [VulnerableApi.Controllers.WebhooksController] Receive webhook (signature=sha256=000...000) — processed (no validation)
+2026-05-13 08:15:16.021 INFO  [VulnerableApi.Controllers.WebhooksController] Register webhook callbackUrl=http://192.168.1.100/internal — saved webhookId=wh_1a2b3c
+2026-05-13 08:15:17.028 INFO  [VulnerableApi.Controllers.WebhooksController] Register webhook callbackUrl=http://127.0.0.1:5000/api/v2/admin/users — saved
+
+2026-05-13 08:15:18.100 INFO  [Microsoft.Hosting.Lifetime] Application is shutting down...
+2026-05-13 08:15:18.212 INFO  [Microsoft.Hosting.Lifetime] Application stopped.

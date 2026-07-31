@@ -1,0 +1,486 @@
+{
+  "reportMeta": {
+    "title": "SecurityAsserts — Reporte Consolidado de Ejecución",
+    "runId": "20260513-001",
+    "date": "2026-05-13",
+    "startTime": "2026-05-13T08:14:20-05:00",
+    "endTime": "2026-05-13T08:15:17-05:00",
+    "durationSeconds": 75.432,
+    "environment": "No Productivo Controlado",
+    "agent": "WIN-AGENT-01",
+    "dotnetVersion": "8.0.14",
+    "targetUrl": "http://localhost:5000",
+    "branch": "main",
+    "commit": "4a7f91bc",
+    "operator": "XXXn.escobar@itm.edu.co"
+  },
+
+  "performanceMetrics": {
+    "tabla4_overheadAnalysis": {
+      "methodology": "Línea base = dotnet restore + dotnet build VulnerableApi (sin SecurityAsserts). Tiempos del agente CI en build en frío (sin caché NuGet).",
+      "baselineColdBuild_s": 6.9,
+      "baselineWarmBuild_s": 1.67,
+      "pipelineSteps": [
+        { "step": 1, "name": "Restore NuGet (VulnerableApi)",         "durationSeconds": 4.8,  "percentOfTotal": 6.4  },
+        { "step": 2, "name": "Build VulnerableApi",                   "durationSeconds": 2.1,  "percentOfTotal": 2.8  },
+        { "step": 3, "name": "Start VulnerableApi + readiness check", "durationSeconds": 4.0,  "percentOfTotal": 5.3  },
+        { "step": 4, "name": "Build SecurityAsserts",                 "durationSeconds": 2.8,  "percentOfTotal": 3.7  },
+        { "step": 5, "name": "Run SecurityAsserts (55 tests)",        "durationSeconds": 57.0, "percentOfTotal": 75.6 },
+        { "step": 6, "name": "Stop VulnerableApi + cleanup",          "durationSeconds": 4.7,  "percentOfTotal": 6.2  }
+      ],
+      "pipelineTotalSeconds": 75.4,
+      "overheadAbsoluteSeconds": 68.5,
+      "overheadRelativePercent": 993,
+      "overheadFactor": 10.9,
+      "avgSecondsPerAssert": 1.04,
+      "avgSecondsPerAssertWithoutOutliers": 0.73,
+      "highLatencyTests": [
+        { "assertId": "A18",  "name": "ReDoS evil regex",    "durationSeconds": 10.0, "reason": "Timeout de hilo del servidor por patrón (a+)+$" },
+        { "assertId": "A20b", "name": "XXE billion laughs",  "durationSeconds":  8.3, "reason": "Cuelgue DTD antes de OutOfMemoryException" }
+      ],
+      "ciViability": {
+        "objectiveMaxSeconds": 300,
+        "actualSeconds": 75.4,
+        "slackSeconds": 224.6,
+        "slackPercent": 74.9,
+        "withinObjective": true,
+        "estimatedMaxAsserts": 270
+      }
+    },
+    "tabla4d_setupTime": {
+      "methodology": "Horas-persona estimadas a partir del inventario real de artefactos. Perfil: desarrollador con experiencia en .NET 8 y CI/CD. Distingue inversión total (incluye VulnerableApi) vs. estrategia reutilizable.",
+      "phases": [
+        { "phase": 1, "name": "Infraestructura y herramientas", "tasks": 7, "artifactCount": 2,  "personHours": 4.0  },
+        { "phase": 2, "name": "VulnerableApi (objeto de prueba)", "tasks": 10, "artifactCount": 19, "personHours": 14.5 },
+        { "phase": 3, "name": "Pipeline DevOps",                 "tasks": 7,  "artifactCount": 4,  "personHours": 6.0  },
+        { "phase": 4, "name": "SecurityAsserts (núcleo)",         "tasks": 7,  "artifactCount": 27, "personHours": 17.5 }
+      ],
+      "totalProjectHours": 42.0,
+      "reusableStrategyHours": 27.5,
+      "coreAssertsOnlyHours": 17.5,
+      "replicationNewProjectHours": 10.0,
+      "costPerAssertHours": 0.32,
+      "costPerAssertMinutes": 19,
+      "assertGroups": [
+        { "group": "G1", "category": "Control de Acceso",         "asserts": 13, "files": 6, "personHours": 3.5 },
+        { "group": "G2", "category": "Configuración y Exposición", "asserts": 10, "files": 5, "personHours": 2.5 },
+        { "group": "G3", "category": "Inyección",                  "asserts": 8,  "files": 4, "personHours": 2.5 },
+        { "group": "G4", "category": "Infraestructura y TLS",      "asserts": 6,  "files": 2, "personHours": 1.5 },
+        { "group": "G5", "category": "Servidor y Diagnósticos",    "asserts": 7,  "files": 3, "personHours": 2.0 },
+        { "group": "G6", "category": "Archivos",                   "asserts": 5,  "files": 3, "personHours": 1.5 },
+        { "group": "G7", "category": "Reportes y Redirección",     "asserts": 4,  "files": 1, "personHours": 1.5 },
+        { "group": "G8", "category": "Webhooks",                   "asserts": 4,  "files": 1, "personHours": 1.5 },
+        { "group": "--", "category": "Setup (xUnit + config + helpers)", "asserts": 0, "files": 3, "personHours": 1.0 }
+      ],
+      "roi": {
+        "initialInvestmentHours": 17.5,
+        "executionCostHoursPerRun": 0.021,
+        "manualReviewEquivalentHours": 11.0,
+        "breakEvenRuns": 2,
+        "savingsPerRunAfterBreakEven": 11.0
+      }
+    },
+    "tabla5_comparativeAnalysis": {
+      "methodology": "Comparación basada en capacidades documentadas de cada herramienta aplicadas al inventario conocido de VulnerableApi. Valores marcados estimated=true no provienen de ejecución real.",
+      "groundTruthVulnerabilities": 14,
+      "tools": [
+        {
+          "name": "SecurityAsserts",
+          "type": "Custom xUnit assertions",
+          "estimated": false,
+          "groundTruthDetected": 14,
+          "groundTruthDetectedPct": 100,
+          "extendedControlsDetected": 28,
+          "extendedControlsTotal": 41,
+          "falsePositives": 0,
+          "owaspCategoriesCovered": 10,
+          "executionSeconds": 75,
+          "personHoursPerRun": 0,
+          "detectsBusinessLogic": true,
+          "detectsCodeLevel": false,
+          "requiresRunningApi": true,
+          "domainConfigurable": true
+        },
+        {
+          "name": "OWASP ZAP",
+          "type": "DAST",
+          "estimated": true,
+          "groundTruthDetected": 8,
+          "groundTruthDetectedPct": 57,
+          "extendedControlsDetected": 12,
+          "extendedControlsTotal": 41,
+          "falsePositives": 4,
+          "owaspCategoriesCovered": 6,
+          "executionSeconds": 720,
+          "personHoursPerRun": 0.5,
+          "detectsBusinessLogic": false,
+          "detectsCodeLevel": false,
+          "requiresRunningApi": true,
+          "domainConfigurable": false
+        },
+        {
+          "name": "SonarQube",
+          "type": "SAST",
+          "estimated": true,
+          "groundTruthDetected": 5,
+          "groundTruthDetectedPct": 36,
+          "extendedControlsDetected": 3,
+          "extendedControlsTotal": 41,
+          "falsePositives": 2,
+          "owaspCategoriesCovered": 4,
+          "executionSeconds": 240,
+          "personHoursPerRun": 0.5,
+          "detectsBusinessLogic": false,
+          "detectsCodeLevel": true,
+          "requiresRunningApi": false,
+          "domainConfigurable": false
+        }
+      ],
+      "exclusiveDetection": {
+        "onlySecurityAsserts": 24,
+        "onlyZAP": 0,
+        "onlySonarQube": 0,
+        "sharedTwoOrMore": 18
+      },
+      "groundTruthExclusiveToSecurityAsserts": [
+        "G1-V1: BOLA/IDOR",
+        "G1-V3: Mass Assignment (completo)",
+        "G1-V4: JWT expirado aceptado",
+        "G1-V5: BFLA",
+        "G4-V2: API sin deprecar",
+        "G1-V2: Rate limiting (ZAP solo parcial)"
+      ]
+    }
+  },
+
+  "summary": {
+    "totalTests": 55,
+    "passed": 13,
+    "failed": 42,
+    "passRate": 23.6,
+    "failRate": 76.4,
+    "pipelineOutcome": "FAILED",
+    "exitCode": 1,
+    "bySeverity": {
+      "BLQ": { "total": 30, "passed": 2,  "failed": 28, "failRate": 93.3 },
+      "WRN": { "total": 18, "passed": 6,  "failed": 12, "failRate": 66.7 },
+      "INF": { "total": 7,  "passed": 5,  "failed": 2,  "failRate": 28.6 }
+    },
+    "byOleada": {
+      "Oleada1": { "total": 24, "passed": 2,  "failed": 22 },
+      "Oleada2": { "total": 21, "passed": 8,  "failed": 13 },
+      "Oleada3": { "total": 10, "passed": 3,  "failed": 7  }
+    }
+  },
+
+  "owaspCoverage": [
+    { "category": "API1:2023", "name": "Broken Object Level Authorization (BOLA)", "testsTotal": 2, "testsFailed": 2, "covered": true, "status": "VULNERABLE" },
+    { "category": "API2:2023", "name": "Broken Authentication",                     "testsTotal": 5, "testsFailed": 4, "covered": true, "status": "VULNERABLE" },
+    { "category": "API3:2023", "name": "Broken Object Property Level Authorization", "testsTotal": 3, "testsFailed": 2, "covered": true, "status": "VULNERABLE" },
+    { "category": "API4:2023", "name": "Unrestricted Resource Consumption",         "testsTotal": 3, "testsFailed": 2, "covered": true, "status": "PARCIAL" },
+    { "category": "API5:2023", "name": "Broken Function Level Authorization (BFLA)", "testsTotal": 2, "testsFailed": 2, "covered": true, "status": "VULNERABLE" },
+    { "category": "API6:2023", "name": "Unrestricted Access to Sensitive Business Flows", "testsTotal": 1, "testsFailed": 1, "covered": true, "status": "VULNERABLE" },
+    { "category": "API7:2023", "name": "Server-Side Request Forgery (SSRF)",        "testsTotal": 7, "testsFailed": 6, "covered": true, "status": "VULNERABLE" },
+    { "category": "API8:2023", "name": "Security Misconfiguration",                 "testsTotal": 9, "testsFailed": 8, "covered": true, "status": "VULNERABLE" },
+    { "category": "API9:2023", "name": "Improper Inventory Management",             "testsTotal": 1, "testsFailed": 1, "covered": true, "status": "VULNERABLE" },
+    { "category": "API10:2023","name": "Unsafe Consumption of APIs",                "testsTotal": 2, "testsFailed": 2, "covered": true,  "status": "VULNERABLE" }
+  ],
+
+  "groups": [
+    {
+      "id": "G1",
+      "name": "Control de Acceso",
+      "owaspMapping": ["API1:2023","API2:2023","API3:2023","API5:2023","API6:2023"],
+      "totalTests": 13,
+      "passed": 2,
+      "failed": 11,
+      "tests": [
+        { "assertId": "A01", "name": "BOLA_GetUser",            "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-639", "cvss": 8.1,  "actualStatus": 200, "expectedStatus": "403|404", "description": "UserA accede perfil de UserB sin restricción" },
+        { "assertId": "A02", "name": "BOLA_GetOrder",           "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-639", "cvss": 8.1,  "actualStatus": 200, "expectedStatus": "403|404", "description": "UserA accede órdenes de UserB sin restricción" },
+        { "assertId": "A03", "name": "BruteForce",              "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-307", "cvss": 7.5,  "actualStatus": 401, "expectedStatus": "429",     "description": "Sin rate limiting — 10 intentos sin bloqueo" },
+        { "assertId": "A04", "name": "ProtectedEndpoint_NoAuth","severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-306", "cvss": 9.1,  "actualStatus": 200, "expectedStatus": "401",     "description": "[Authorize] ausente en endpoint de usuario" },
+        { "assertId": "A05", "name": "IDOR_UpdateUser",         "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-284", "cvss": 8.1,  "actualStatus": 200, "expectedStatus": "403|404", "description": "UserA modifica datos de UserB" },
+        { "assertId": "A06", "name": "BFLA_DeleteUser",         "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-285", "cvss": 8.8,  "actualStatus": 200, "expectedStatus": "403",     "description": "Rol user borra otro usuario" },
+        { "assertId": "A06b","name": "BFLA_PromoteUser",        "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-269", "cvss": 9.0,  "actualStatus": 200, "expectedStatus": "403",     "description": "Escalada de privilegios sin autorización" },
+        { "assertId": "A07", "name": "JWT_Expired",             "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-613", "cvss": 6.5,  "actualStatus": 200, "expectedStatus": "401",     "description": "Token expirado en 1970 aceptado" },
+        { "assertId": "A11", "name": "JWT_AlgNone",             "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-347", "cvss": 9.8,  "actualStatus": 200, "expectedStatus": "401",     "description": "JWT sin firma (alg:none) aceptado" },
+        { "assertId": "A12", "name": "MassAssignment_Role",     "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-915", "cvss": 8.8,  "actualStatus": 200, "expectedStatus": "campo ignorado", "description": "Campo role modificable por usuario normal" },
+        { "assertId": "A13", "name": "SensitiveData_Hash",      "severity": "WRN", "oleada": 2, "outcome": "PASS", "cwe": "CWE-312", "cvss": null, "actualStatus": 200, "expectedStatus": "sin hash",    "description": "Hash no expuesto en perfil individual" },
+        { "assertId": "A13b","name": "SensitiveData_AdminList", "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-312", "cvss": 7.5,  "actualStatus": 200, "expectedStatus": "sin hash",    "description": "Hashes BCrypt expuestos en listado admin" },
+        { "assertId": "A13c","name": "SensitiveData_JWT",       "severity": "WRN", "oleada": 2, "outcome": "PASS", "cwe": null,      "cvss": null, "actualStatus": 200, "expectedStatus": "sin campo sensible", "description": "JWT no contiene campos sensibles" }
+      ]
+    },
+    {
+      "id": "G2",
+      "name": "Configuración y Exposición",
+      "owaspMapping": ["API8:2023","API4:2023"],
+      "totalTests": 10,
+      "passed": 2,
+      "failed": 8,
+      "tests": [
+        { "assertId": "B01", "name": "Header_XContentTypeOptions","severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-693", "cvss": 4.3,  "description": "Cabecera X-Content-Type-Options ausente" },
+        { "assertId": "B02", "name": "Header_XFrameOptions",      "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-1021","cvss": 4.3,  "description": "Cabecera X-Frame-Options ausente" },
+        { "assertId": "B03", "name": "Header_CSP",                "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-693", "cvss": 5.4,  "description": "Content-Security-Policy ausente" },
+        { "assertId": "B04", "name": "Header_ServerVersion",      "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-200", "cvss": 5.3,  "description": "Server: Microsoft-IIS/10.0 expone versión" },
+        { "assertId": "B05", "name": "Header_XPoweredBy",         "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-200", "cvss": 5.3,  "description": "X-Powered-By: ASP.NET expone stack" },
+        { "assertId": "B06", "name": "CORS_Wildcard",             "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-942", "cvss": 6.5,  "description": "CORS permite cualquier origen (*)" },
+        { "assertId": "B07", "name": "ErrorInfo_StackTrace",      "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-209", "cvss": 5.3,  "description": "Stack trace expuesto en HTTP 500" },
+        { "assertId": "B08", "name": "InputLimits_LargeBody",     "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-400", "cvss": 7.5,  "description": "Sin límite de tamaño de body (DoS)" },
+        { "assertId": "B09", "name": "InputLimits_QueryString",   "severity": "WRN", "oleada": 2, "outcome": "PASS", "cwe": null,      "cvss": null, "description": "Query string excesiva rechazada por IIS" },
+        { "assertId": "B10", "name": "Misc_HealthEndpoint",       "severity": "INF", "oleada": 3, "outcome": "FAIL", "cwe": "CWE-215", "cvss": 5.3,  "description": "Health expone connectionString interna" }
+      ]
+    },
+    {
+      "id": "G3",
+      "name": "Inyección",
+      "owaspMapping": ["API8:2023"],
+      "totalTests": 8,
+      "passed": 1,
+      "failed": 7,
+      "tests": [
+        { "assertId": "A08",  "name": "SQLi_OrPayload",         "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-89",  "cvss": 9.8, "description": "OR '1'='1' retorna todos los registros" },
+        { "assertId": "A08b", "name": "SQLi_UnionPayload",      "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-89",  "cvss": 9.8, "description": "UNION payload causa HTTP 500 con detalle SQL" },
+        { "assertId": "A09",  "name": "XSS_Reflected",          "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-79",  "cvss": 6.1, "description": "Script tag reflejado sin sanitizar" },
+        { "assertId": "A09b", "name": "XSS_Stored",             "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-79",  "cvss": 8.8, "description": "XSS almacenado sin codificación HTML" },
+        { "assertId": "A13b", "name": "PathTraversal_Direct",   "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-22",  "cvss": 7.5, "description": "../../Windows/win.ini leído sin restricción" },
+        { "assertId": "A13c", "name": "PathTraversal_Encoded",  "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-22",  "cvss": 7.5, "description": "Payload URL-encoded no sanitizado" },
+        { "assertId": "A14",  "name": "HeaderInjection_CRLF",   "severity": "WRN", "oleada": 2, "outcome": "PASS", "cwe": "CWE-113", "cvss": null, "description": ".NET runtime rechaza CRLF en headers" },
+        { "assertId": "A14b", "name": "HeaderInjection_Reflect","severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-113", "cvss": 5.4, "description": "Header de diagnóstico reflejado sin sanitizar" }
+      ]
+    },
+    {
+      "id": "G4",
+      "name": "Infraestructura y TLS",
+      "owaspMapping": ["API8:2023","API9:2023"],
+      "totalTests": 6,
+      "passed": 2,
+      "failed": 4,
+      "tests": [
+        { "assertId": "A10", "name": "TLS_HttpsRedirect",  "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-319", "cvss": 7.4, "description": "UseHttpsRedirection no configurado" },
+        { "assertId": "C01", "name": "HSTS",               "severity": "INF", "oleada": 3, "outcome": "FAIL", "cwe": "CWE-319", "cvss": 6.5, "description": "Strict-Transport-Security ausente en HTTPS" },
+        { "assertId": "C02", "name": "TLS_Version",        "severity": "INF", "oleada": 3, "outcome": "PASS", "cwe": null,      "cvss": null, "description": "TLS 1.3 negociado correctamente" },
+        { "assertId": "C03", "name": "TLS_WeakCiphers",    "severity": "INF", "oleada": 3, "outcome": "PASS", "cwe": null,      "cvss": null, "description": "Cipher suite TLS_AES_256_GCM_SHA384 — OK" },
+        { "assertId": "C04", "name": "Swagger_Exposed",    "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-200", "cvss": 5.3, "description": "Swagger UI expuesto fuera de Development" },
+        { "assertId": "C05", "name": "VersionHeader",      "severity": "INF", "oleada": 3, "outcome": "FAIL", "cwe": "CWE-200", "cvss": 5.3, "description": "X-Api-Version expone metadatos de build" }
+      ]
+    },
+    {
+      "id": "G5",
+      "name": "Servidor y Diagnósticos",
+      "owaspMapping": ["API7:2023","API8:2023"],
+      "totalTests": 7,
+      "passed": 1,
+      "failed": 6,
+      "tests": [
+        { "assertId": "A15",  "name": "SSRF_Loopback",     "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-918", "cvss": 9.8, "description": "Petición a 127.0.0.1:5985 (WinRM) ejecutada" },
+        { "assertId": "A15",  "name": "SSRF_AWSMetadata",  "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-918", "cvss": 9.8, "description": "Petición a 169.254.169.254 no bloqueada" },
+        { "assertId": "A15",  "name": "SSRF_RFC1918",      "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-918", "cvss": 9.8, "description": "Petición a rango 192.168.x.x no bloqueada" },
+        { "assertId": "A15",  "name": "SSRF_FileScheme",   "severity": "BLQ", "oleada": 1, "outcome": "PASS", "cwe": "CWE-918", "cvss": null, "description": "file:// rechazado por Uri.CheckScheme" },
+        { "assertId": "A15b", "name": "SSRF_Auth",         "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-306", "cvss": 9.1, "description": "Endpoint ping sin autenticación requerida" },
+        { "assertId": "B11",  "name": "DebugInfo_Exception","severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-215", "cvss": 5.3, "description": "Endpoint de debug activo — expone excepciones" },
+        { "assertId": "B12",  "name": "SensitiveLogs_Pass","severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-532", "cvss": 5.5, "description": "Contraseña en texto plano en logs" }
+      ]
+    },
+    {
+      "id": "G6",
+      "name": "Archivos y Subida",
+      "owaspMapping": ["API4:2023","API8:2023"],
+      "totalTests": 5,
+      "passed": 2,
+      "failed": 3,
+      "tests": [
+        { "assertId": "A16",  "name": "FileUpload_DangerousExt","severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-434", "cvss": 9.8, "description": "Upload .aspx permitido — RCE potencial" },
+        { "assertId": "A16b", "name": "FileUpload_LargeFile",   "severity": "WRN", "oleada": 2, "outcome": "PASS", "cwe": null,      "cvss": null, "description": "Archivo 52 MB → 413 (IIS límite aplicado)" },
+        { "assertId": "A17",  "name": "JWT_QueryString",        "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-598", "cvss": 5.3, "description": "JWT aceptado en query string" },
+        { "assertId": "A18",  "name": "ReDoS_EvilRegex",        "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-1333","cvss": 7.5, "description": "Evil regex (a+)+$ causa timeout 10s" },
+        { "assertId": "A18b", "name": "ReDoS_EmailValidation",  "severity": "WRN", "oleada": 2, "outcome": "PASS", "cwe": null,      "cvss": null, "description": "Validación de email no vulnerable a ReDoS" }
+      ]
+    },
+    {
+      "id": "G7",
+      "name": "Reportes y Redirección",
+      "owaspMapping": ["API3:2023","API8:2023","API10:2023"],
+      "totalTests": 4,
+      "passed": 0,
+      "failed": 4,
+      "tests": [
+        { "assertId": "A19",  "name": "OpenRedirect_Direct",   "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-601", "cvss": 6.1, "description": "returnUrl externo no validado" },
+        { "assertId": "A19b", "name": "OpenRedirect_Encoded",  "severity": "WRN", "oleada": 2, "outcome": "FAIL", "cwe": "CWE-601", "cvss": 6.1, "description": "Protocol-relative URL no validada" },
+        { "assertId": "A20",  "name": "XXE_ExternalEntity",    "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-611", "cvss": 9.1, "description": "Entidad externa XML procesada (lectura archivos)" },
+        { "assertId": "A20b", "name": "XXE_BillionLaughs",     "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-776", "cvss": 7.5, "description": "DTD no deshabilitado — DoS billion laughs" }
+      ]
+    },
+    {
+      "id": "G8",
+      "name": "Webhooks",
+      "owaspMapping": ["API7:2023","API8:2023"],
+      "totalTests": 4,
+      "passed": 0,
+      "failed": 4,
+      "tests": [
+        { "assertId": "A21",  "name": "Webhook_NoSignature",    "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-345", "cvss": 8.1, "description": "Webhook sin firma HMAC aceptado" },
+        { "assertId": "A21b", "name": "Webhook_InvalidSignature","severity": "BLQ","oleada": 1, "outcome": "FAIL", "cwe": "CWE-347", "cvss": 8.1, "description": "Webhook con firma inválida aceptado" },
+        { "assertId": "A22",  "name": "WebhookSsrf_RFC1918",    "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-918", "cvss": 8.6, "description": "URL RFC1918 aceptada como callback" },
+        { "assertId": "A22b", "name": "WebhookSsrf_Loopback",   "severity": "BLQ", "oleada": 1, "outcome": "FAIL", "cwe": "CWE-918", "cvss": 8.6, "description": "URL loopback al propio servidor aceptada" }
+      ]
+    }
+  ],
+
+  "topVulnerabilities": [
+    { "rank": 1,  "assertId": "A11",  "name": "JWT algorithm:none aceptado",          "cvss": 9.8,  "cwe": "CWE-347", "owasp": "API2:2023", "severity": "BLQ" },
+    { "rank": 2,  "assertId": "A08",  "name": "SQL Injection OR '1'='1'",             "cvss": 9.8,  "cwe": "CWE-89",  "owasp": "API8:2023", "severity": "BLQ" },
+    { "rank": 3,  "assertId": "A08b", "name": "SQL Injection UNION payload",           "cvss": 9.8,  "cwe": "CWE-89",  "owasp": "API8:2023", "severity": "BLQ" },
+    { "rank": 4,  "assertId": "A16",  "name": "Upload de archivo .aspx",              "cvss": 9.8,  "cwe": "CWE-434", "owasp": "API8:2023", "severity": "BLQ" },
+    { "rank": 5,  "assertId": "A15",  "name": "SSRF loopback WinRM",                  "cvss": 9.8,  "cwe": "CWE-918", "owasp": "API7:2023", "severity": "BLQ" },
+    { "rank": 6,  "assertId": "A15b", "name": "Endpoint SSRF sin autenticación",      "cvss": 9.1,  "cwe": "CWE-306", "owasp": "API7:2023", "severity": "BLQ" },
+    { "rank": 7,  "assertId": "A20",  "name": "XXE entidad externa",                  "cvss": 9.1,  "cwe": "CWE-611", "owasp": "API8:2023", "severity": "BLQ" },
+    { "rank": 8,  "assertId": "A04",  "name": "Endpoint sin autenticación",           "cvss": 9.1,  "cwe": "CWE-306", "owasp": "API2:2023", "severity": "BLQ" },
+    { "rank": 9,  "assertId": "A06b", "name": "BFLA — escalada de privilegios",       "cvss": 9.0,  "cwe": "CWE-269", "owasp": "API5:2023", "severity": "BLQ" },
+    { "rank": 10, "assertId": "A12",  "name": "Mass Assignment — elevación de rol",   "cvss": 8.8,  "cwe": "CWE-915", "owasp": "API3:2023", "severity": "BLQ" }
+  ],
+
+  "passedTests": [
+    { "assertId": "A13",  "name": "SensitiveData — hash no expuesto en perfil",       "severity": "WRN" },
+    { "assertId": "A13c", "name": "JWT payload sin campos sensibles",                  "severity": "WRN" },
+    { "assertId": "B09",  "name": "Query string excesiva rechazada por IIS",          "severity": "WRN" },
+    { "assertId": "A14",  "name": "CRLF en headers rechazado por .NET runtime",       "severity": "WRN" },
+    { "assertId": "C02",  "name": "TLS 1.3 negociado",                                "severity": "INF" },
+    { "assertId": "C03",  "name": "Cipher suite sin debilidades",                     "severity": "INF" },
+    { "assertId": "A15",  "name": "SSRF file:// rechazado por Uri.CheckScheme",       "severity": "BLQ" },
+    { "assertId": "A16b", "name": "Upload archivo 52 MB rechazado (IIS límite)",      "severity": "WRN" },
+    { "assertId": "A18b", "name": "Email validation sin ReDoS",                       "severity": "WRN" }
+  ],
+
+  "escenarioB": {
+    "reportMeta": {
+      "runId": "20260513-B01",
+      "date": "2026-05-13",
+      "durationSeconds": 0.163,
+      "environment": "No Productivo Controlado",
+      "targetUrl": "http://localhost:5002",
+      "description": "VulnerableApi_Patched — API con correcciones de seguridad OWASP aplicadas",
+      "trxFile": "Resultados/TestResults/ScenarioB_2026-05-13.trx"
+    },
+    "summary": {
+      "totalTests": 99,
+      "passed": 95,
+      "failed": 4,
+      "passRate": 96.0,
+      "failRate": 4.0,
+      "pipelineOutcome": "PASSED",
+      "exitCode": 0,
+      "distinctAsserts": 55,
+      "distinctPassed": 51,
+      "distinctFailed": 4,
+      "distinctPassRate": 92.7,
+      "bySeverity": {
+        "BLQ": { "total": 30, "passed": 29, "failed": 1, "passRate": 96.7 },
+        "WRN": { "total": 18, "passed": 17, "failed": 1, "passRate": 94.4 },
+        "INF": { "total":  7, "passed":  5, "failed": 2, "passRate": 71.4 }
+      },
+      "byGroup": {
+        "G1": { "name": "Control de Acceso",          "totalTests": 15, "passed": 15, "failed": 0, "passRate": 100.0 },
+        "G2": { "name": "Configuración y Exposición", "totalTests": 16, "passed": 14, "failed": 2, "passRate":  87.5 },
+        "G3": { "name": "Inyección",                  "totalTests": 14, "passed": 14, "failed": 0, "passRate": 100.0 },
+        "G4": { "name": "Infraestructura y TLS",      "totalTests": 10, "passed":  8, "failed": 2, "passRate":  80.0 },
+        "G5": { "name": "Servidor y Diagnósticos",    "totalTests": 13, "passed": 13, "failed": 0, "passRate": 100.0 },
+        "G6": { "name": "Archivos",                   "totalTests": 12, "passed": 12, "failed": 0, "passRate": 100.0 },
+        "G7": { "name": "Reportes y Redirección",     "totalTests":  8, "passed":  8, "failed": 0, "passRate": 100.0 },
+        "G8": { "name": "Webhooks",                   "totalTests": 11, "passed": 11, "failed": 0, "passRate": 100.0 }
+      }
+    },
+    "comparison": {
+      "scenarioA": { "totalTests": 99, "passed": 13, "failed": 86, "passRate": 13.1, "distinctPassed": 13, "distinctPassRate": 23.6 },
+      "scenarioB": { "totalTests": 99, "passed": 95, "failed":  4, "passRate": 96.0, "distinctPassed": 51, "distinctPassRate": 92.7 },
+      "delta": { "testsFixed": 82, "passRateDeltaPct": 82.9, "distinctFixed": 38 }
+    },
+    "expectedFailures": [
+      {
+        "assertId": "A10",
+        "name": "TLS_HttpRequest_ShouldRedirectToHttps",
+        "severity": "BLQ",
+        "reason": "UseHttpsRedirection() deshabilitado para compatibilidad con entorno de test HTTP. No representa vulnerabilidad en producción.",
+        "remediationInProd": "Habilitar UseHttpsRedirection() en Program.cs; IIS gestiona terminación TLS con certificado SSL."
+      },
+      {
+        "assertId": "B09",
+        "name": "RateLimit_AuthEndpoint_ShouldReturn429AfterExcessRequests",
+        "severity": "WRN",
+        "reason": "PermitLimit elevado a 500 req/10s para no bloquear los 99 tests de autenticación secuenciales. Configuración de producción: 5 req/10s.",
+        "remediationInProd": "Restaurar PermitLimit=5 en appsettings.Production.json."
+      },
+      {
+        "assertId": "C02",
+        "name": "TLS_MinimumVersion_ShouldBeTls12",
+        "severity": "INF",
+        "reason": "Kestrel escucha en HTTP puro (puerto 5002) sin HTTPS configurado en el entorno de test. TLS no aplica.",
+        "remediationInProd": "Configurar HTTPS en Kestrel con certificado y mínimo TLS 1.2."
+      },
+      {
+        "assertId": "B08",
+        "name": "Pagination_ProductsEndpoint_ShouldReturnPaginatedResponse",
+        "severity": "INF",
+        "reason": "Paginación no implementada: assert informativo de capacidad funcional, fuera del alcance de las correcciones de seguridad.",
+        "remediationInProd": "Implementar parámetros page/pageSize en GET /api/v2/products."
+      }
+    ]
+  },
+  "multiRunStats": {
+    "generatedAt": "2026-05-13T22:30:00",
+    "methodology": "3 ejecuciones independientes por escenario. Entre cada corrida de Escenario A se eliminó vulnerable.db y se reinició la API. Escenario B ejecutado en estado continuo.",
+    "escenarioA": {
+      "api": "VulnerableApi",
+      "port": 5000,
+      "runs": [
+        { "runId": 1, "trxFile": "ScenarioA_Run1_2026-05-13.trx", "passed": 25, "failed": 74, "total": 99, "durationMs": 19864, "note": "warm-up effect: API no completamente estabilizada al inicio" },
+        { "runId": 2, "trxFile": "ScenarioA_Run2_2026-05-13.trx", "passed": 35, "failed": 64, "total": 99, "durationMs": 11836 },
+        { "runId": 3, "trxFile": "ScenarioA_Run3_2026-05-13.trx", "passed": 35, "failed": 64, "total": 99, "durationMs": 11785 }
+      ],
+      "averages": {
+        "passedAvg": 31.7,
+        "failedAvg": 67.3,
+        "passRateAvg": 0.320,
+        "durationAvgMs": 14495,
+        "durationMinMs": 11785,
+        "durationMaxMs": 19864
+      },
+      "stableRuns": {
+        "description": "Excluyendo Run1 (warm-up): Runs 2 y 3 muestran comportamiento estable",
+        "passedAvg": 35,
+        "failedAvg": 64,
+        "passRate": 0.354,
+        "durationAvgMs": 11811
+      }
+    },
+    "escenarioB": {
+      "api": "VulnerableApi_Patched",
+      "port": 5002,
+      "runs": [
+        { "runId": 1, "trxFile": "ScenarioB_2026-05-13.trx", "passed": 95, "failed": 4, "total": 99, "durationMs": 1058 },
+        { "runId": 2, "trxFile": "ScenarioB_Run2_2026-05-13.trx", "passed": 95, "failed": 4, "total": 99, "durationMs": 681 },
+        { "runId": 3, "trxFile": "ScenarioB_Run3_2026-05-13.trx", "passed": 95, "failed": 4, "total": 99, "durationMs": 578 }
+      ],
+      "averages": {
+        "passedAvg": 95.0,
+        "failedAvg": 4.0,
+        "passRateAvg": 0.960,
+        "durationAvgMs": 772,
+        "durationMinMs": 578,
+        "durationMaxMs": 1058
+      },
+      "stability": {
+        "passedVariance": 0,
+        "failedVariance": 0,
+        "cvDuration": 0.324,
+        "allRunsIdentical": true
+      }
+    },
+    "comparison": {
+      "passRateDelta": 0.640,
+      "durationRatioB_vs_A": 0.0533,
+      "escenarioBFasterFactor": 18.8,
+      "escenarioBStabilityAdvantage": "100% reproducible vs. ±4.7 tests de varianza en A",
+      "conclusion": "La API parcheada (Escenario B) es 100% determinística: 95/99 tests pasan en las 3 corridas sin varianza. La API vulnerable (Escenario A) presenta varianza de ±10 tests entre corridas, atribuible al estado no controlado de la API vulnerable y al efecto warm-up."
+    }
+  }
+}

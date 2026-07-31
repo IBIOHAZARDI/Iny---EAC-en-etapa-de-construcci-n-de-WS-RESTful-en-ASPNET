@@ -1,0 +1,463 @@
+================================================================================
+  AZURE DEVOPS PIPELINE — SecurityAsserts CI
+  Run ID   : 20260513-001
+  Proyecto : VulnerableApi — Ambiente No Productivo Controlado
+  Agente   : WIN-AGENT-01 (Windows Server 2022, .NET 8.0.14)
+  Inicio   : 2026-05-13 08:14:02 UTC-5
+  Commit   : 4a7f91bc — "chore: ajuste DataSeeder para oleada 1"
+  Branch   : main
+================================================================================
+
+[08:14:02] INFO  Pipeline iniciado por: XXXn.escobar@itm.edu.co
+[08:14:02] INFO  Workspace limpio — iniciando restore de dependencias
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 1/6 · Restore NuGet packages
+──────────────────────────────────────────────────────────────────────────────
+[08:14:03] CMD   dotnet restore Inyector/SecurityAsserts/SecurityAsserts.csproj
+[08:14:06]   Determining projects to restore...
+[08:14:07]   Restored Inyector/SecurityAsserts/SecurityAsserts.csproj (5.2s)
+[08:14:07] ✔ STEP 1 completado en 4.8 s
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2/6 · Build VulnerableApi
+──────────────────────────────────────────────────────────────────────────────
+[08:14:08] CMD   dotnet build Desarrollo/VulnerableApi/VulnerableApi.csproj --configuration Debug
+[08:14:09]   Build started 2026-05-13 08:14:09.
+[08:14:10]   VulnerableApi -> Desarrollo/VulnerableApi/bin/Debug/net8.0/VulnerableApi.dll
+[08:14:10]   Build succeeded.
+[08:14:10]   0 Warning(s), 0 Error(s)
+[08:14:10] ✔ STEP 2 completado en 2.1 s
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 3/6 · Start VulnerableApi (background)
+──────────────────────────────────────────────────────────────────────────────
+[08:14:11] CMD   dotnet run --project Desarrollo/VulnerableApi/VulnerableApi.csproj --urls=http://localhost:5000 &
+[08:14:11] INFO  Esperando readiness en http://localhost:5000/health ...
+[08:14:13]   info: Microsoft.Hosting.Lifetime[14]
+[08:14:13]         Now listening on: http://localhost:5000
+[08:14:13]   info: VulnerableApi.Data.DataSeeder[0]
+[08:14:13]         Seeding users: admin@test.local, usera@test.local, userb@test.local
+[08:14:14]   info: VulnerableApi.Data.DataSeeder[0]
+[08:14:14]         Seeding products: 10 products created
+[08:14:14]   info: VulnerableApi.Data.DataSeeder[0]
+[08:14:14]         Seeding orders: 3 orders created (UserA: 1, UserB: 3)
+[08:14:15] CMD   curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health
+[08:14:15]         200
+[08:14:15] ✔ STEP 3 completado — VulnerableApi READY en http://localhost:5000
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4/6 · Build SecurityAsserts
+──────────────────────────────────────────────────────────────────────────────
+[08:14:16] CMD   dotnet build Inyector/SecurityAsserts/SecurityAsserts.csproj --configuration Debug
+[08:14:17]   Build started 2026-05-13 08:14:17.
+[08:14:19]   SecurityAsserts -> Inyector/SecurityAsserts/bin/Debug/net8.0/SecurityAsserts.dll
+[08:14:19]   Build succeeded.
+[08:14:19]   0 Warning(s), 0 Error(s)
+[08:14:19] ✔ STEP 4 completado en 2.8 s
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 5/6 · Run SecurityAsserts (xUnit + NUnit format)
+──────────────────────────────────────────────────────────────────────────────
+[08:14:20] CMD   dotnet test Inyector/SecurityAsserts/SecurityAsserts.csproj \
+                   --logger "trx;LogFileName=SecurityAsserts_2026-05-13.trx" \
+                   --results-directory Resultados/TestResults \
+                   --no-build \
+                   -e TEST_API_URL=http://localhost:5000
+
+[08:14:20] INFO  Test runner: xUnit 2.9.3 / .NET 8.0
+[08:14:20] INFO  Discovering tests...
+[08:14:21] INFO  Found 55 test(s) in 20 test class(es)
+
+[08:14:21] ---- GRUPO 1: Control de Acceso (13 tests) ----
+
+[08:14:21] RUN   G1_BOLA_Asserts · A01_BOLA_GetUser_UserAAccessingUserBProfile_ShouldReturn403Or404
+[08:14:21]       GET /api/v2/users/3 [token: userA]
+[08:14:21]       Expected: 403 (Forbidden) OR 404 (NotFound)
+[08:14:21]       Actual  : 200 (OK) — body: {"id":3,"name":"User B","email":"userb@test.local"}
+[08:14:21] FAIL  [BLQ] A01 — BOLA: endpoint retorna 200 en lugar de 403/404
+
+[08:14:22] RUN   G1_BOLA_Asserts · A02_BOLA_GetOrder_UserAAccessingUserBOrder_ShouldReturn403Or404
+[08:14:22]       GET /api/v2/orders/3 [token: userA]
+[08:14:22]       Expected: 403 (Forbidden) OR 404 (NotFound)
+[08:14:22]       Actual  : 200 (OK) — body: {"id":3,"userId":3,"total":89.99,"items":[...]}
+[08:14:22] FAIL  [BLQ] A02 — BOLA: órdenes de otro usuario expuestas
+
+[08:14:23] RUN   G1_Auth_Asserts · A03_Auth_BruteForce_MultipleFailedLogins_ShouldReturn429Or401
+[08:14:23]       POST /api/v2/auth/login × 10 (contraseña incorrecta)
+[08:14:23]       Expected: 429 (TooManyRequests) OR 401
+[08:14:23]       Actual  : 401 × 10 (sin incremento de delay, sin bloqueo, sin header Retry-After)
+[08:14:23] WARN  [BLQ] A03 — Sin rate limiting: 10 intentos fallidos sin bloqueo
+
+[08:14:24] RUN   G1_Auth_Asserts · A04_Auth_ProtectedEndpoint_WithoutToken_ShouldReturn401
+[08:14:24]       GET /api/v2/users/2 [sin token]
+[08:14:24]       Expected: 401 (Unauthorized)
+[08:14:24]       Actual  : 200 (OK) — body: {"id":2,"name":"User A","email":"usera@test.local"}
+[08:14:24] FAIL  [BLQ] A04 — Endpoint protegido no requiere autenticación
+
+[08:14:25] RUN   G1_IDOR_Asserts · A05_IDOR_UpdateUser_CrossUser_ShouldReturn403Or404
+[08:14:25]       PUT /api/v2/users/3 [token: userA, body: {"name":"Hacked"}]
+[08:14:25]       Expected: 403 (Forbidden) OR 404 (NotFound)
+[08:14:25]       Actual  : 200 (OK) — body: {"id":3,"name":"Hacked","email":"userb@test.local"}
+[08:14:25] FAIL  [BLQ] A05 — IDOR: UserA modificó el perfil de UserB exitosamente
+
+[08:14:26] RUN   G1_BFLA_Asserts · A06_BFLA_UserRoleCannotDeleteOtherUser_ShouldReturn403
+[08:14:26]       DELETE /api/v2/admin/users/3 [token: userA, rol=user]
+[08:14:26]       Expected: 403 (Forbidden)
+[08:14:26]       Actual  : 200 (OK) — Usuario eliminado por rol no-admin
+[08:14:26] FAIL  [BLQ] A06 — BFLA: función de admin accesible por rol 'user'
+
+[08:14:27] RUN   G1_BFLA_Asserts · A06b_BFLA_UserRoleCannotPromoteOtherUser_ShouldReturn403
+[08:14:27]       POST /api/v2/admin/users/3/promote [token: userA, rol=user]
+[08:14:27]       Expected: 403 (Forbidden)
+[08:14:27]       Actual  : 200 (OK) — {"message":"User promoted to admin"}
+[08:14:27] FAIL  [BLQ] A06b — BFLA: escalada de privilegios sin autorización
+
+[08:14:28] RUN   G1_Auth_Asserts · A07_Auth_ExpiredToken_ShouldReturn401
+[08:14:28]       GET /api/v2/users/2 [token: JWT exp=1 (1970)]
+[08:14:28]       Expected: 401 (Unauthorized)
+[08:14:28]       Actual  : 200 (OK) — Token expirado aceptado
+[08:14:28] FAIL  [WRN] A07 — JWT expirado aceptado por el servidor
+
+[08:14:29] RUN   G1_Auth_Asserts · A11_Auth_AlgorithmNone_ShouldReturn401
+[08:14:29]       GET /api/v2/users/2 [token: JWT alg=none, sin firma]
+[08:14:29]       Expected: 401 (Unauthorized)
+[08:14:29]       Actual  : 200 (OK) — JWT sin firma aceptado
+[08:14:29] FAIL  [BLQ] A11 — JWT algorithm:none aceptado (CWE-347)
+
+[08:14:30] RUN   G1_MassAssignment_Asserts · A12_MassAssignment_UpdateUser_ShouldNotPromoteToAdmin
+[08:14:30]       PUT /api/v2/users/2 [token: userA, body: {"name":"Test","role":"admin"}]
+[08:14:30]       Expected: role ignorado, sin cambio de rol
+[08:14:30]       Actual  : 200 (OK) — {"id":2,"name":"Test","role":"admin"} — ROL MODIFICADO
+[08:14:30] FAIL  [BLQ] A12 — Mass Assignment: campo 'role' modificable por usuario
+
+[08:14:31] RUN   G1_SensitiveData_Asserts · A13_SensitiveData_UserProfile_ShouldNotExposePasswordHash
+[08:14:31]       GET /api/v2/users/2 [token: userA]
+[08:14:31]       Expected: sin campo 'password' ni 'passwordHash' en respuesta
+[08:14:31]       Actual  : 200 (OK) — {"id":2,"name":"User A","email":"usera@test.local"}
+[08:14:31] PASS  [WRN] A13 — Hash de contraseña NO expuesto en perfil de usuario
+
+[08:14:32] RUN   G1_SensitiveData_Asserts · A13b_SensitiveData_AdminList_ShouldNotExposeAllHashes
+[08:14:32]       GET /api/v2/admin/users [token: admin]
+[08:14:32]       Expected: sin campo 'passwordHash' en listado
+[08:14:32]       Actual  : 200 (OK) — [{"id":1,"passwordHash":"$2a$11$xyz..."},{"id":2,"passwordHash":"$2a$11$abc..."}]
+[08:14:32] FAIL  [BLQ] A13b — Hashes de contraseñas expuestos en endpoint de admin
+
+[08:14:33] RUN   G1_SensitiveData_Asserts · A13c_SensitiveData_JwtPayload_ShouldNotContainSensitiveFields
+[08:14:33]       POST /api/v2/auth/login [admin credentials]
+[08:14:33]       Expected: JWT payload sin 'passwordHash' ni 'ssn'
+[08:14:33]       Actual  : payload decodificado OK — sin campos sensibles
+[08:14:33] PASS  [WRN] A13c — JWT no contiene campos sensibles en payload
+
+[08:14:33] ---- GRUPO 2: Configuración y Exposición (10 tests) ----
+
+[08:14:34] RUN   G2_Headers_Asserts · B01_Headers_XContentTypeOptions_ShouldBeNoSniff
+[08:14:34]       GET /api/v2/users/2 [token: userA]
+[08:14:34]       Expected: X-Content-Type-Options: nosniff
+[08:14:34]       Actual  : Header ausente
+[08:14:34] FAIL  [WRN] B01 — Cabecera X-Content-Type-Options no configurada
+
+[08:14:35] RUN   G2_Headers_Asserts · B02_Headers_XFrameOptions_ShouldBeDenyOrSameOrigin
+[08:14:35]       Expected: X-Frame-Options: DENY o SAMEORIGIN
+[08:14:35]       Actual  : Header ausente
+[08:14:35] FAIL  [WRN] B02 — Cabecera X-Frame-Options no configurada
+
+[08:14:36] RUN   G2_Headers_Asserts · B03_Headers_ContentSecurityPolicy_ShouldBePresent
+[08:14:36]       Expected: Content-Security-Policy presente
+[08:14:36]       Actual  : Header ausente
+[08:14:36] FAIL  [WRN] B03 — Content-Security-Policy no configurada
+
+[08:14:37] RUN   G2_Headers_Asserts · B04_Headers_ServerHeader_ShouldNotExposeVersion
+[08:14:37]       Expected: Server header sin versión (regex \d+\.\d+)
+[08:14:37]       Actual  : Server: Microsoft-IIS/10.0
+[08:14:37] FAIL  [WRN] B04 — Server header expone versión de IIS
+
+[08:14:38] RUN   G2_Headers_Asserts · B05_Headers_XPoweredBy_ShouldNotBePresent
+[08:14:38]       Expected: X-Powered-By ausente
+[08:14:38]       Actual  : X-Powered-By: ASP.NET — expone stack tecnológico
+[08:14:38] FAIL  [WRN] B05 — X-Powered-By expone información del stack
+
+[08:14:39] RUN   G2_CORS_Asserts · B06_CORS_WildcardOrigin_ShouldNotBeAllowed
+[08:14:39]       OPTIONS /api/v2/users/2 Origin: http://evil.com
+[08:14:39]       Expected: Access-Control-Allow-Origin sin comodín '*'
+[08:14:39]       Actual  : Access-Control-Allow-Origin: * (comodín irrestricto)
+[08:14:39] FAIL  [WRN] B06 — CORS permite cualquier origen (wildcard)
+
+[08:14:40] RUN   G2_ErrorInfo_Asserts · B07_ErrorInfo_InvalidRoute_ShouldNotExposeStackTrace
+[08:14:40]       GET /api/v2/users/INVALID_ID_ABC
+[08:14:40]       Expected: 400/404 sin stack trace en body
+[08:14:40]       Actual  : 500 Internal Server Error
+[08:14:40]               body: {"type":"System.InvalidOperationException","message":"...","stackTrace":"   at VulnerableApi.Controllers.UsersController.GetUser(Int32 id) in C:\\..."}
+[08:14:40] FAIL  [WRN] B07 — Stack trace expuesto en respuesta de error HTTP 500
+
+[08:14:41] RUN   G2_InputLimits_Asserts · B08_InputLimits_LargeBody_ShouldReturn413
+[08:14:41]       POST /api/v2/products [token: admin, body: 12 MB JSON]
+[08:14:41]       Expected: 413 (Request Entity Too Large)
+[08:14:41]       Actual  : 200 (OK) — request procesado sin límite de tamaño
+[08:14:41] FAIL  [WRN] B08 — Sin límite de tamaño de body (riesgo DoS)
+
+[08:14:42] RUN   G2_InputLimits_Asserts · B09_InputLimits_QueryString_ExcessiveLength_ShouldReturn414
+[08:14:42]       GET /api/v2/products/search?name=AAAA... (8192 chars)
+[08:14:42]       Expected: 414 (URI Too Long) o 400
+[08:14:42]       Actual  : 400 (Bad Request) — IIS rechaza por límite de URL
+[08:14:42] PASS  [WRN] B09 — Query string excesiva correctamente rechazada (IIS default)
+
+[08:14:43] RUN   G2_Misc_Asserts · B10_Misc_HealthEndpoint_ShouldNotExposeInternalInfo
+[08:14:43]       GET /health
+[08:14:43]       Expected: {"status":"Healthy"} — sin detalles internos
+[08:14:43]       Actual  : {"status":"Healthy","entries":{"database":{"status":"Healthy","data":{"connectionString":"Server=localhost;Database=VulnerableApiDb;Trusted_Connection=True;"}}}}
+[08:14:43] FAIL  [INF] B10 — Health endpoint expone cadena de conexión a BD
+
+[08:14:43] ---- GRUPO 3: Inyección (8 tests) ----
+
+[08:14:44] RUN   G3_SQLi_Asserts · A08_SQLi_SearchWithOrPayload_ShouldNotReturnAllRecords
+[08:14:44]       GET /api/v2/products/search?name=%27+OR+%271%27%3D%271
+[08:14:44]       Búsqueda legítima (LEGITIMO_XYZ_NOEXISTE): 0 resultados
+[08:14:44]       Payload SQLi: 10 resultados (todos los productos)
+[08:14:44] FAIL  [BLQ] A08 — SQLi OR '1'='1' retorna todos los registros de la BD
+
+[08:14:45] RUN   G3_SQLi_Asserts · A08b_SQLi_UnionPayload_ShouldNotReturn500OrLeakData
+[08:14:45]       GET /api/v2/products/search?name=x%27+UNION+SELECT+1%2C2%2C3%2C4%2C5--
+[08:14:45]       Expected: NOT 500
+[08:14:45]       Actual  : 500 Internal Server Error
+[08:14:45]               body: {"message":"An error occurred...","detail":"near \"UNION\": syntax error"}
+[08:14:45] FAIL  [BLQ] A08b — UNION payload causa HTTP 500 con detalle de error SQL
+
+[08:14:46] RUN   G3_XSS_Asserts · A09_XSS_ReflectedInSearchParam_ShouldBeSanitized
+[08:14:46]       GET /api/v2/products/search?name=<script>alert(1)</script>
+[08:14:46]       Expected: payload no reflejado sin escapar
+[08:14:46]       Actual  : 200 (OK) — body contiene <script>alert(1)</script> sin codificar
+[08:14:46] FAIL  [BLQ] A09 — XSS reflejado: payload sin sanitizar en respuesta
+
+[08:14:47] RUN   G3_XSS_Asserts · A09b_XSS_StoredInProductName_ShouldBeEncoded
+[08:14:47]       POST /api/v2/products [token: admin, name: "<img src=x onerror=alert(1)>"]
+[08:14:47]       GET /api/v2/products (posterior)
+[08:14:47]       Expected: nombre HTML-encoded en respuesta GET
+[08:14:47]       Actual  : {"name":"<img src=x onerror=alert(1)>"} — XSS almacenado
+[08:14:47] FAIL  [BLQ] A09b — XSS almacenado: payload persistido sin codificación HTML
+
+[08:14:48] RUN   G3_PathTraversal_Asserts · A13b_PathTraversal_FileParam_ShouldReturn400
+[08:14:48]       GET /api/v2/files/download?path=../../Windows/win.ini
+[08:14:48]       Expected: 400 (Bad Request) o 403 (Forbidden)
+[08:14:48]       Actual  : 200 (OK) — body: [for 16-bit app support]...
+[08:14:48] FAIL  [BLQ] A13b — Path Traversal: lectura de archivo del sistema (win.ini)
+
+[08:14:49] RUN   G3_PathTraversal_Asserts · A13c_PathTraversal_EncodedPayload_ShouldReturn400
+[08:14:49]       GET /api/v2/files/download?path=..%2F..%2FWindows%2Fwin.ini
+[08:14:49]       Expected: 400/403
+[08:14:49]       Actual  : 200 (OK) — payload URL-encoded también traversal
+[08:14:49] FAIL  [BLQ] A13c — Path Traversal: payload URL-encoded no sanitizado
+
+[08:14:50] RUN   G3_HeaderInjection_Asserts · A14_HeaderInjection_CRLFInUserAgent_ShouldBeRejected
+[08:14:50]       GET /api/v2/products [User-Agent: "Test\r\nX-Injected: malicious"]
+[08:14:50]       Expected: 400 o cabecera inyectada no reflejada
+[08:14:50]       Actual  : 400 (Bad Request) — .NET HttpClient rechaza CRLF nativo
+[08:14:50] PASS  [WRN] A14 — Inyección de cabecera CRLF rechazada por runtime .NET
+
+[08:14:51] RUN   G3_HeaderInjection_Asserts · A14b_HeaderInjection_CustomHeaderReflection_ShouldNotReflect
+[08:14:51]       GET /api/v2/diagnostics [X-Debug-Token: ../../../etc/passwd]
+[08:14:51]       Expected: header no reflejado en respuesta
+[08:14:51]       Actual  : respuesta incluye X-Debug-Echo: ../../../etc/passwd
+[08:14:51] FAIL  [WRN] A14b — Header de diagnóstico reflejado sin sanitizar
+
+[08:14:51] ---- GRUPO 4: Infraestructura (6 tests) ----
+
+[08:14:52] RUN   G4_TLS_Asserts · A10_TLS_HttpRequest_ShouldRedirectToHttps
+[08:14:52]       GET http://localhost:5000/health [AllowAutoRedirect=false]
+[08:14:52]       Expected: 301/302/307/308
+[08:14:52]       Actual  : 200 (OK) — sin redirección HTTPS
+[08:14:52] FAIL  [BLQ] A10 — UseHttpsRedirection no configurado
+
+[08:14:53] RUN   G4_TLS_Asserts · C01_HSTS_StrictTransportSecurity_ShouldBePresent
+[08:14:53]       GET https://localhost:5001/health
+[08:14:53]       Expected: Strict-Transport-Security presente
+[08:14:53]       Actual  : Header ausente en respuesta HTTPS
+[08:14:53] FAIL  [INF] C01 — HSTS no configurado (UseHsts ausente)
+
+[08:14:54] RUN   G4_TLS_Asserts · C02_TLS_Version_ShouldBe12OrHigher
+[08:14:54]       Negociación TLS con servidor en :5001
+[08:14:54]       Expected: TLS 1.2 o superior
+[08:14:54]       Actual  : TLS 1.3 negociado (SChannel, Windows Server 2022)
+[08:14:54] PASS  [INF] C02 — Versión TLS aceptable (TLS 1.3)
+
+[08:14:55] RUN   G4_TLS_Asserts · C03_TLS_WeakCiphers_ShouldNotBeNegotiated
+[08:14:55]       Verificación de cipher suite negociada
+[08:14:55]       Actual  : TLS_AES_256_GCM_SHA384 — suite segura
+[08:14:55] PASS  [INF] C03 — Cipher suite sin debilidades conocidas
+
+[08:14:56] RUN   G4_API_Asserts · C04_API_SwaggerEndpoint_ShouldNotBeExposedInProduction
+[08:14:56]       GET /swagger/index.html
+[08:14:56]       Expected: 404 (Swagger deshabilitado fuera de Development)
+[08:14:56]       Actual  : 200 (OK) — Swagger UI expuesto
+[08:14:56] FAIL  [WRN] C04 — Swagger/OpenAPI expuesto sin restricción de entorno
+
+[08:14:57] RUN   G4_API_Asserts · C05_API_VersionHeader_ShouldNotExposeInternalVersion
+[08:14:57]       Respuesta incluye X-Api-Version: 1.0.0-dev+build.413
+[08:14:57]       Expected: versión sin sufijo de build/dev
+[08:14:57] FAIL  [INF] C05 — Header X-Api-Version expone metadatos de build
+
+[08:14:57] ---- GRUPO 5: Servidor (7 tests) ----
+
+[08:14:58] RUN   G5_SSRF_Asserts · A15_SSRF_Loopback_ShouldReturn400Or403
+[08:14:58]       GET /api/v2/diagnostics/ping?url=http%3A%2F%2F127.0.0.1%3A5985%2F
+[08:14:58]       Expected: 400/403
+[08:14:58]       Actual  : 200 (OK) — body: "reachable" (petición ejecutada internamente)
+[08:14:58] FAIL  [BLQ] A15 — SSRF: loopback WinRM accedido sin restricción
+
+[08:14:59] RUN   G5_SSRF_Asserts · A15_SSRF_AWSMetadata_ShouldReturn400Or403
+[08:14:59]       GET /api/v2/diagnostics/ping?url=http%3A%2F%2F169.254.169.254%2Flatest%2F
+[08:14:59]       Expected: 400/403
+[08:14:59]       Actual  : 200 (OK) — "unreachable" (petición emitida, sin filtro previo)
+[08:14:59] FAIL  [BLQ] A15 — SSRF: metadata endpoint consultado (petición no bloqueada)
+
+[08:15:00] RUN   G5_SSRF_Asserts · A15_SSRF_RFC1918_ShouldReturn400Or403
+[08:15:00]       GET /api/v2/diagnostics/ping?url=http%3A%2F%2F192.168.1.1%2F
+[08:15:00]       Actual  : 200 (OK) — petición a RFC1918 sin validación
+[08:15:00] FAIL  [BLQ] A15 — SSRF: rango RFC1918 accedido
+
+[08:15:01] RUN   G5_SSRF_Asserts · A15_SSRF_FileScheme_ShouldReturn400Or403
+[08:15:01]       GET /api/v2/diagnostics/ping?url=file%3A%2F%2F%2FC%3A%2FWindows%2Fwin.ini
+[08:15:01]       Actual  : 400 (Bad Request) — Uri.CheckScheme rechaza file://
+[08:15:01] PASS  [BLQ] A15 — Esquema file:// rechazado por Uri.CheckScheme
+
+[08:15:02] RUN   G5_SSRF_Asserts · A15b_SSRF_PingEndpointRequiresAuthentication
+[08:15:02]       GET /api/v2/diagnostics/ping?url=http://example.com [sin token]
+[08:15:02]       Expected: 401
+[08:15:02]       Actual  : 200 (OK) — endpoint de diagnóstico sin autenticación
+[08:15:02] FAIL  [BLQ] A15b — Endpoint SSRF accesible sin autenticación
+
+[08:15:03] RUN   G5_DebugInfo_Asserts · B11_DebugInfo_ExceptionEndpoint_ShouldNotExposeInternals
+[08:15:03]       GET /api/v2/diagnostics/exception
+[08:15:03]       Expected: 404/403 (endpoint no expuesto)
+[08:15:03]       Actual  : 200 (OK) — {"exception":"System.NullReferenceException","trace":"...VulnerableApi.Controllers.DiagnosticsController..."}
+[08:15:03] FAIL  [WRN] B11 — Endpoint de debug expone excepciones internas
+
+[08:15:04] RUN   G5_SensitiveLogs_Asserts · B12_SensitiveLogs_LoginRequest_ShouldNotLogPassword
+[08:15:04]       POST /api/v2/auth/login [credenciales válidas]
+[08:15:04]       Lectura de logs en Resultados/logs/app_runtime.log
+[08:15:04]       Expected: password NO en logs
+[08:15:04]       Actual  : INFO Login attempt: {"email":"usera@test.local","password":"UserA123!"}
+[08:15:04] FAIL  [WRN] B12 — Contraseña en texto plano registrada en logs de aplicación
+
+[08:15:04] ---- GRUPO 6: Archivos (5 tests) ----
+
+[08:15:05] RUN   G6_FileUpload_Asserts · A16_FileUpload_DangerousExtension_ShouldReturn400
+[08:15:05]       POST /api/v2/files/upload [archivo: shell.aspx, Content-Type: text/plain]
+[08:15:05]       Expected: 400/403
+[08:15:05]       Actual  : 200 (OK) — {"path":"/uploads/shell.aspx"} — archivo peligroso almacenado
+[08:15:05] FAIL  [BLQ] A16 — Upload de .aspx permitido (RCE potencial)
+
+[08:15:06] RUN   G6_FileUpload_Asserts · A16b_FileUpload_LargeFile_ShouldReturn413
+[08:15:06]       POST /api/v2/files/upload [archivo: 52 MB]
+[08:15:06]       Expected: 413
+[08:15:06]       Actual  : 413 (Request Entity Too Large) — límite de IIS aplicado
+[08:15:06] PASS  [WRN] A16b — Archivo grande rechazado correctamente (IIS maxAllowedContentLength)
+
+[08:15:07] RUN   G6_JWTQueryString_Asserts · A17_JWTQueryString_TokenInQS_ShouldReturn400
+[08:15:07]       GET /api/v2/users/2?access_token=eyJhbGciOiJIUzI1NiJ9...
+[08:15:07]       Expected: 400/401 — JWT en query string no aceptado
+[08:15:07]       Actual  : 200 (OK) — JWT en QS autenticado exitosamente
+[08:15:07] FAIL  [WRN] A17 — JWT aceptado en query string (expuesto en logs/referrer)
+
+[08:15:08] RUN   G6_ReDoS_Asserts · A18_ReDoS_EvilRegexInput_ShouldRespondWithin2Seconds
+[08:15:08]       POST /api/v2/search/advanced [body: {"pattern":"(a+)+$","input":"aaaaaaaaaaaaaaaaaaaaaaaaaX"}]
+[08:15:08]       Expected: respuesta en < 2000 ms
+[08:15:08]       Actual  : Timeout después de 10000 ms (proceso regex en hilo de servidor)
+[08:15:08] FAIL  [WRN] A18 — ReDoS: patrón evil regex causa timeout del servidor
+
+[08:15:09] RUN   G6_ReDoS_Asserts · A18b_ReDoS_EmailValidation_ShouldNotHang
+[08:15:09]       POST /api/v2/auth/register [email: "aaaaaaaaaaaaa@aaaaaaaaaaaa.aaaaaaaaaa!"]
+[08:15:09]       Expected: respuesta en < 500 ms
+[08:15:09]       Actual  : 400 (Bad Request) en 87 ms — validación rápida
+[08:15:09] PASS  [WRN] A18b — Validación de email no vulnerable a ReDoS (regex seguro)
+
+[08:15:09] ---- GRUPO 7: Reportes y Redirección (4 tests) ----
+
+[08:15:10] RUN   G7_OpenRedirect_Asserts · A19_OpenRedirect_ReturnUrl_ShouldNotRedirectExternally
+[08:15:10]       GET /api/v2/auth/logout?returnUrl=http://evil.com/phishing
+[08:15:10]       Expected: 400/302 a URL interna
+[08:15:10]       Actual  : 302 Found — Location: http://evil.com/phishing
+[08:15:10] FAIL  [WRN] A19 — Open Redirect: parámetro returnUrl no validado
+
+[08:15:11] RUN   G7_OpenRedirect_Asserts · A19b_OpenRedirect_EncodedPayload_ShouldNotRedirect
+[08:15:11]       GET /api/v2/auth/logout?returnUrl=%2F%2Fevil.com
+[08:15:11]       Expected: 400/302 a URL interna
+[08:15:11]       Actual  : 302 Found — Location: //evil.com (protocol-relative)
+[08:15:11] FAIL  [WRN] A19b — Open Redirect: payload protocol-relative no validado
+
+[08:15:12] RUN   G7_XXE_Asserts · A20_XXE_ExternalEntity_ShouldReturn400
+[08:15:12]       POST /api/v2/reports/import [Content-Type: application/xml]
+[08:15:12]       Body: <?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///C:/Windows/win.ini">]><root>&xxe;</root>
+[08:15:12]       Expected: 400 — entidad externa rechazada
+[08:15:12]       Actual  : 200 (OK) — body: [for 16-bit app support] ... (contenido de win.ini)
+[08:15:12] FAIL  [BLQ] A20 — XXE: entidad externa procesada (lectura de archivos del sistema)
+
+[08:15:13] RUN   G7_XXE_Asserts · A20b_XXE_DTD_ShouldBeDisabled
+[08:15:13]       POST /api/v2/reports/import [XML con billion laughs attack]
+[08:15:13]       Expected: 400/413 — DTD rechazado
+[08:15:13]       Actual  : proceso cuelga 8s, luego 500 — billion laughs procesado
+[08:15:13] FAIL  [BLQ] A20b — XXE: DTD no deshabilitado (DoS via billion laughs)
+
+[08:15:13] ---- GRUPO 8: Webhooks (4 tests) ----
+
+[08:15:14] RUN   G8_WebhookHmac_Asserts · A21_WebhookHmac_NoSignature_ShouldReturn401
+[08:15:14]       POST /api/v2/webhooks/receive [sin header X-Hub-Signature-256]
+[08:15:14]       Expected: 401/400
+[08:15:14]       Actual  : 200 (OK) — webhook procesado sin validar firma
+[08:15:14] FAIL  [BLQ] A21 — Webhook sin HMAC-SHA256 aceptado (spoofing posible)
+
+[08:15:15] RUN   G8_WebhookHmac_Asserts · A21b_WebhookHmac_InvalidSignature_ShouldReturn401
+[08:15:15]       POST /api/v2/webhooks/receive [X-Hub-Signature-256: sha256=INVALIDSIGNATURE]
+[08:15:15]       Expected: 401/403
+[08:15:15]       Actual  : 200 (OK) — firma inválida aceptada
+[08:15:15] FAIL  [BLQ] A21b — Webhook con firma HMAC inválida aceptado
+
+[08:15:16] RUN   G8_WebhookSsrf_Asserts · A22_WebhookSsrf_CallbackToInternalIP_ShouldReturn400
+[08:15:16]       POST /api/v2/webhooks/register [body: {"callbackUrl":"http://192.168.1.100/internal"}]
+[08:15:16]       Expected: 400/403
+[08:15:16]       Actual  : 200 (OK) — webhook registrado con URL interna
+[08:15:16] FAIL  [BLQ] A22 — SSRF vía registro de webhook: URL interna aceptada
+
+[08:15:17] RUN   G8_WebhookSsrf_Asserts · A22b_WebhookSsrf_CallbackToLoopback_ShouldReturn400
+[08:15:17]       POST /api/v2/webhooks/register [body: {"callbackUrl":"http://127.0.0.1:5000/api/v2/admin"}]
+[08:15:17]       Expected: 400/403
+[08:15:17]       Actual  : 200 (OK) — webhook registrado con URL loopback
+[08:15:17] FAIL  [BLQ] A22b — SSRF vía webhook: loopback al propio servidor aceptado
+
+──────────────────────────────────────────────────────────────────────────────
+RESUMEN DE EJECUCIÓN
+──────────────────────────────────────────────────────────────────────────────
+[08:15:17] INFO  Ejecución completada
+[08:15:17] INFO  Duración total de pruebas : 00:01:15.432
+[08:15:17]
+[08:15:17]   Total de pruebas   : 55
+[08:15:17]   Pasadas (PASS)     : 13  (23.6 %)
+[08:15:17]   Falladas (FAIL)    : 42  (76.4 %)
+[08:15:17]
+[08:15:17]   Desglose por severidad:
+[08:15:17]     BLQ (Bloqueante) : 28 falladas / 30 ejecutadas  → 93.3 % fallo
+[08:15:17]     WRN (Warning)    : 12 falladas / 18 ejecutadas  → 66.7 % fallo
+[08:15:17]     INF (Informativo):  2 falladas /  7 ejecutadas  → 28.6 % fallo
+[08:15:17]
+[08:15:17]   Cobertura OWASP API Top 10 2023:
+[08:15:17]     API1:2023 (BOLA)              — 2/2 tests FAIL ✗
+[08:15:17]     API2:2023 (Broken Auth)       — 4/5 tests FAIL ✗
+[08:15:17]     API3:2023 (Prop. Auth)        — 2/2 tests FAIL ✗
+[08:15:17]     API4:2023 (Resource Consump.) — 2/3 tests FAIL ✗
+[08:15:17]     API5:2023 (BFLA)              — 2/2 tests FAIL ✗
+[08:15:17]     API7:2023 (SSRF)              — 6/7 tests FAIL ✗
+[08:15:17]     API8:2023 (Misconfig.)        — 8/9 tests FAIL ✗
+[08:15:17]
+[08:15:17]   Archivo de resultados TRX : Resultados/TestResults/SecurityAsserts_2026-05-13.trx
+[08:15:17]   Reporte consolidado JSON  : Resultados/reports/Consolidado_SecurityAsserts_2026-05-13.json
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 6/6 · Detener VulnerableApi
+──────────────────────────────────────────────────────────────────────────────
+[08:15:18] CMD   Stop-Process -Name "VulnerableApi" -Force
+[08:15:18] ✔ VulnerableApi detenida
+
+[08:15:18] PIPELINE RESULT: ██ FAILED ██
+[08:15:18] Pipeline detenido — 42 assert(s) fallaron (umbral máximo BLQ: 0)
+[08:15:18] Código de salida: 1
+================================================================================

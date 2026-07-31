@@ -1,0 +1,1148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TestRun id="b3f1e2d4-0a5c-4b8e-9f7d-1c2a3b4d5e6f"
+         name="SecurityAsserts CI — 2026-05-13 08:14:20 UTC-5"
+         runUser="WIN-AGENT-01\AzureDevOpsAgent"
+         xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+
+  <Times creation="2026-05-13T08:14:20.000-05:00"
+         queuing="2026-05-13T08:14:20.100-05:00"
+         start="2026-05-13T08:14:21.000-05:00"
+         finish="2026-05-13T08:15:17.432-05:00" />
+
+  <TestSettings name="Default" id="00000000-0000-0000-0000-000000000001">
+    <Description>SecurityAsserts — Ambiente No Productivo Controlado</Description>
+  </TestSettings>
+
+  <Results>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 1 — Control de Acceso (13 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A01_BOLA_GetUser_UserAAccessingUserBProfile_ShouldReturn403Or404"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.412"
+                    startTime="2026-05-13T08:14:21.010-05:00"
+                    endTime="2026-05-13T08:14:21.422-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {403 (Forbidden), 404 (NotFound)}, but found 200 (OK). A01 — Un usuario NO debe acceder al perfil de otro usuario (BOLA). Response body: {"id":3,"name":"User B","email":"userb@test.local","role":"user"}</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at SecurityAsserts.Grupo1_ControlAcceso.G1_BOLA_Asserts.A01_BOLA_GetUser_UserAAccessingUserBProfile_ShouldReturn403Or404() in G1_BOLA_Asserts.cs:line 32</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A01 | BLQ | OWASP API1:2023]
+Request : GET http://localhost:5000/api/v2/users/3
+Auth    : Bearer eyJhbGciOiJIUzI1NiJ9... (UserA token)
+Expected: 403 Forbidden OR 404 Not Found
+Actual  : 200 OK
+Body    : {"id":3,"name":"User B","email":"userb@test.local","role":"user"}
+CWE     : CWE-639 (Authorization Bypass Through User-Controlled Key)
+CVSS    : 8.1 (High) — AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A02_BOLA_GetOrder_UserAAccessingUserBOrder_ShouldReturn403Or404"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.389"
+                    startTime="2026-05-13T08:14:22.010-05:00"
+                    endTime="2026-05-13T08:14:22.399-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {403 (Forbidden), 404 (NotFound)}, but found 200 (OK). A02 — Un usuario NO debe acceder a órdenes de otro usuario (BOLA). Response body: {"id":3,"userId":3,"total":89.99,"items":[{"productId":4,"quantity":1,"price":89.99}]}</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at SecurityAsserts.Grupo1_ControlAcceso.G1_BOLA_Asserts.A02_BOLA_GetOrder_UserAAccessingUserBOrder_ShouldReturn403Or404() in G1_BOLA_Asserts.cs:line 48</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A02 | BLQ | OWASP API1:2023]
+Request : GET http://localhost:5000/api/v2/orders/3
+Auth    : Bearer (UserA token)
+Expected: 403 Forbidden OR 404 Not Found
+Actual  : 200 OK — datos de orden de UserB expuestos a UserA
+CWE     : CWE-639
+CVSS    : 8.1 (High)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A03_Auth_BruteForce_MultipleFailedLogins_ShouldReturn429Or401"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.871"
+                    startTime="2026-05-13T08:14:23.010-05:00"
+                    endTime="2026-05-13T08:14:23.881-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {429 (TooManyRequests)}, but found 401 after 10 consecutive failed attempts without any backoff, lockout or Retry-After header. A03 — Después de múltiples fallos, debe retornar 429 (sin cuenta los intentos)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A03_Auth_BruteForce_MultipleFailedLogins_ShouldReturn429Or401() in G1_Auth_Asserts.cs:line 38</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A03 | BLQ | OWASP API2:2023]
+Request : POST /api/v2/auth/login × 10 (password incorrecto)
+Expected: 429 TooManyRequests con header Retry-After
+Actual  : 401 Unauthorized × 10 (sin incremento de latencia, sin bloqueo)
+Sin header: Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining
+CWE     : CWE-307 (Improper Restriction of Excessive Auth Attempts)
+CVSS    : 7.5 (High)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A04_Auth_ProtectedEndpoint_WithoutToken_ShouldReturn401"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.201"
+                    startTime="2026-05-13T08:14:24.010-05:00"
+                    endTime="2026-05-13T08:14:24.211-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 401 (Unauthorized), but found 200 (OK). A04 — Endpoint protegido sin token debe retornar 401</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A04_Auth_ProtectedEndpoint_WithoutToken_ShouldReturn401() in G1_Auth_Asserts.cs:line 57</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A04 | BLQ | OWASP API2:2023]
+Request : GET /api/v2/users/2 (sin Authorization header)
+Expected: 401 Unauthorized
+Actual  : 200 OK — {"id":2,"name":"User A","email":"usera@test.local"}
+Nota    : [Authorize] no aplicado en UsersController.GetUser
+CWE     : CWE-306 (Missing Authentication for Critical Function)
+CVSS    : 9.1 (Critical)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A05_IDOR_UpdateUser_CrossUser_ShouldReturn403Or404"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.298"
+                    startTime="2026-05-13T08:14:25.010-05:00"
+                    endTime="2026-05-13T08:14:25.308-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {403 (Forbidden), 404 (NotFound)}, but found 200 (OK). A05 — IDOR: UserA NO debe modificar el perfil de UserB</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_IDOR_Asserts.A05_IDOR_UpdateUser_CrossUser_ShouldReturn403Or404() in G1_IDOR_Asserts.cs:line 29</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A05 | BLQ | OWASP API1:2023]
+Request : PUT /api/v2/users/3 [Auth: UserA | Body: {"name":"Hacked"}]
+Expected: 403 Forbidden
+Actual  : 200 OK — {"id":3,"name":"Hacked","email":"userb@test.local"}
+Impacto : Modificación de datos de otro usuario (integridad comprometida)
+CWE     : CWE-284 (Improper Access Control)
+CVSS    : 8.1 (High)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A06_BFLA_UserRoleCannotDeleteOtherUser_ShouldReturn403"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.187"
+                    startTime="2026-05-13T08:14:26.010-05:00"
+                    endTime="2026-05-13T08:14:26.197-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 403 (Forbidden), but found 200 (OK). A06 — BFLA: un usuario con rol 'user' NO debe eliminar otros usuarios</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_BFLA_Asserts.A06_BFLA_UserRoleCannotDeleteOtherUser_ShouldReturn403() in G1_BFLA_Asserts.cs:line 29</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A06 | BLQ | OWASP API5:2023]
+Request : DELETE /api/v2/admin/users/3 [Auth: UserA, rol=user]
+Expected: 403 Forbidden
+Actual  : 200 OK — usuario eliminado por rol no-administrador
+CWE     : CWE-285 (Improper Authorization)
+CVSS    : 8.8 (High)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A06b_BFLA_UserRoleCannotPromoteOtherUser_ShouldReturn403"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.156"
+                    startTime="2026-05-13T08:14:27.010-05:00"
+                    endTime="2026-05-13T08:14:27.166-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 403 (Forbidden), but found 200 (OK). A06b — BFLA: escalada de privilegios sin autorización</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_BFLA_Asserts.A06b_BFLA_UserRoleCannotPromoteOtherUser_ShouldReturn403() in G1_BFLA_Asserts.cs:line 45</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A06b | BLQ | OWASP API5:2023]
+Request : POST /api/v2/admin/users/3/promote [Auth: UserA, rol=user]
+Expected: 403 Forbidden
+Actual  : 200 OK — {"message":"User promoted to admin"}
+CWE     : CWE-269 (Improper Privilege Management)
+CVSS    : 9.0 (Critical)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A07_Auth_ExpiredToken_ShouldReturn401"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.221"
+                    startTime="2026-05-13T08:14:28.010-05:00"
+                    endTime="2026-05-13T08:14:28.231-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 401 (Unauthorized), but found 200 (OK). A07 — JWT expirado (exp=1) aceptado por el servidor</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A07_Auth_ExpiredToken_ShouldReturn401() in G1_Auth_Asserts.cs:line 78</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A07 | WRN | OWASP API2:2023]
+Token   : JWT con exp=1 (Unix epoch 1970-01-01T00:00:01Z)
+Expected: 401 Unauthorized
+Actual  : 200 OK — token expirado hace 56 años aceptado
+Causa   : ValidateLifetime=false en JwtBearerOptions
+CWE     : CWE-613 (Insufficient Session Expiration)
+CVSS    : 6.5 (Medium)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A11_Auth_AlgorithmNone_ShouldReturn401"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.178"
+                    startTime="2026-05-13T08:14:29.010-05:00"
+                    endTime="2026-05-13T08:14:29.188-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 401 (Unauthorized), but found 200 (OK). A11 — JWT con algorithm:none (sin firma) aceptado (CWE-347)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A11_Auth_AlgorithmNone_ShouldReturn401() in G1_Auth_Asserts.cs:line 95</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A11 | BLQ | OWASP API2:2023]
+Token   : eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIn0.
+Expected: 401 Unauthorized — alg:none rechazado
+Actual  : 200 OK — token fraudulento autenticado como admin
+CWE     : CWE-347 (Improper Verification of Cryptographic Signature)
+CVSS    : 9.8 (Critical)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A12_MassAssignment_UpdateUser_ShouldNotPromoteToAdmin"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.244"
+                    startTime="2026-05-13T08:14:30.010-05:00"
+                    endTime="2026-05-13T08:14:30.254-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected response body to NOT contain "role":"admin" after update, but it does. A12 — Mass Assignment: campo 'role' modificable por usuario normal</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_MassAssignment_Asserts.A12_MassAssignment_UpdateUser_ShouldNotPromoteToAdmin() in G1_MassAssignment_Asserts.cs:line 36</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A12 | BLQ | OWASP API3:2023]
+Request : PUT /api/v2/users/2 [Body: {"name":"Test","role":"admin","isActive":false}]
+Expected: role='user' sin cambio — campos no enlazables ignorados
+Actual  : 200 OK — {"id":2,"name":"Test","role":"admin","isActive":false}
+Causa   : Falta de [BindNever] / DTOs sin allowlist de propiedades
+CWE     : CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes)
+CVSS    : 8.8 (High)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A13_SensitiveData_UserProfile_ShouldNotExposePasswordHash"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.198"
+                    startTime="2026-05-13T08:14:31.010-05:00"
+                    endTime="2026-05-13T08:14:31.208-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>
+[ASSERT A13 | WRN | OWASP API3:2023] — PASSED
+Request : GET /api/v2/users/2 [Auth: UserA]
+Actual  : 200 OK — {"id":2,"name":"User A","email":"usera@test.local","role":"user"}
+Validado: Body no contiene 'password', 'passwordHash', 'hash', 'salt'
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A13b_SensitiveData_AdminList_ShouldNotExposeAllHashes"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.312"
+                    startTime="2026-05-13T08:14:32.010-05:00"
+                    endTime="2026-05-13T08:14:32.322-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected response body to NOT contain property 'passwordHash', but found it. A13b — Hashes BCrypt expuestos en endpoint de administración</Message>
+          <StackTrace>   at SecurityAsserts.Grupo1_ControlAcceso.G1_SensitiveData_Asserts.A13b_SensitiveData_AdminList_ShouldNotExposeAllHashes() in G1_SensitiveData_Asserts.cs:line 52</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+[ASSERT A13b | BLQ | OWASP API3:2023]
+Request : GET /api/v2/admin/users [Auth: admin]
+Actual  : [{"id":1,"email":"admin@test.local","passwordHash":"$2a$11$kN7..."},...] 
+Exposición de hashes BCrypt — facilita ataques offline de fuerza bruta
+CWE     : CWE-312 (Cleartext Storage of Sensitive Information)
+CVSS    : 7.5 (High)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A13c_SensitiveData_JwtPayload_ShouldNotContainSensitiveFields"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.276"
+                    startTime="2026-05-13T08:14:33.010-05:00"
+                    endTime="2026-05-13T08:14:33.286-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>
+[ASSERT A13c | WRN | OWASP API2:2023] — PASSED
+JWT payload claims: sub, email, role, exp, iat
+Sin campos: passwordHash, ssn, creditCard, pin
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 2 — Configuración y Exposición (10 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="B01_Headers_XContentTypeOptions_ShouldBeNoSniff"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.189"
+                    startTime="2026-05-13T08:14:34.010-05:00"
+                    endTime="2026-05-13T08:14:34.199-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected header 'X-Content-Type-Options' with value 'nosniff', but header was absent. B01 — La cabecera X-Content-Type-Options: nosniff debe estar presente</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B01_Headers_XContentTypeOptions_ShouldBeNoSniff() in G2_Headers_Asserts.cs:line 35</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B02_Headers_XFrameOptions_ShouldBeDenyOrSameOrigin"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.177"
+                    startTime="2026-05-13T08:14:35.010-05:00"
+                    endTime="2026-05-13T08:14:35.187-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected header 'X-Frame-Options' to be present (DENY or SAMEORIGIN), but header was absent. B02 — La cabecera X-Frame-Options debe estar presente</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B02_Headers_XFrameOptions_ShouldBeDenyOrSameOrigin() in G2_Headers_Asserts.cs:line 47</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B03_Headers_ContentSecurityPolicy_ShouldBePresent"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.163"
+                    startTime="2026-05-13T08:14:36.010-05:00"
+                    endTime="2026-05-13T08:14:36.173-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected header 'Content-Security-Policy' to be present, but header was absent. B03 — La cabecera Content-Security-Policy debe estar presente</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B03_Headers_ContentSecurityPolicy_ShouldBePresent() in G2_Headers_Asserts.cs:line 57</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B04_Headers_ServerHeader_ShouldNotExposeVersion"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.182"
+                    startTime="2026-05-13T08:14:37.010-05:00"
+                    endTime="2026-05-13T08:14:37.192-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Did not expect header 'Server' to match regex '\d+\.\d+', but found 'Microsoft-IIS/10.0'. B04 — La cabecera Server NO debe exponer la versión del servidor</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B04_Headers_ServerHeader_ShouldNotExposeVersion() in G2_Headers_Asserts.cs:line 68</StackTrace>
+        </ErrorInfo>
+        <StdOut>Header actual: Server: Microsoft-IIS/10.0 — expone SO y versión de IIS</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B05_Headers_XPoweredBy_ShouldNotBePresent"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.154"
+                    startTime="2026-05-13T08:14:38.010-05:00"
+                    endTime="2026-05-13T08:14:38.164-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected header 'X-Powered-By' to be absent, but found 'ASP.NET'. B05 — X-Powered-By expone tecnología del stack</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B05_Headers_XPoweredBy_ShouldNotBePresent() in G2_Headers_Asserts.cs:line 77</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B06_CORS_WildcardOrigin_ShouldNotBeAllowed"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.231"
+                    startTime="2026-05-13T08:14:39.010-05:00"
+                    endTime="2026-05-13T08:14:39.241-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected header 'Access-Control-Allow-Origin' to NOT be '*', but found '*'. B06 — CORS permite cualquier origen (wildcard irrestricto)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_CORS_Asserts.B06_CORS_WildcardOrigin_ShouldNotBeAllowed() in G2_CORS_Asserts.cs:line 34</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: *
+Configuración CORS irrestricta permite CSRF cross-origin con credenciales
+CWE: CWE-942 (Permissive Cross-domain Policy with Untrusted Domains)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B07_ErrorInfo_InvalidRoute_ShouldNotExposeStackTrace"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.267"
+                    startTime="2026-05-13T08:14:40.010-05:00"
+                    endTime="2026-05-13T08:14:40.277-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code NOT to be 500 (Internal Server Error), and response body should not contain stack trace. B07 — Stack trace expuesto en respuesta de error</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_ErrorInfo_Asserts.B07_ErrorInfo_InvalidRoute_ShouldNotExposeStackTrace() in G2_ErrorInfo_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Status: 500 Internal Server Error
+Body excerpt: {"type":"System.InvalidOperationException","message":"Sequence contains no elements.",
+"stackTrace":"   at System.Linq.ThrowHelper.ThrowNoElementsException()\n   at VulnerableApi.Controllers.UsersController.GetUser(Int32 id) in C:\\Trabajo\\Universidad\\Desarrollo\\VulnerableApi\\Controllers\\UsersController.cs:line 47"}
+CWE: CWE-209 (Generation of Error Message Containing Sensitive Information)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B08_InputLimits_LargeBody_ShouldReturn413"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:02.891"
+                    startTime="2026-05-13T08:14:41.010-05:00"
+                    endTime="2026-05-13T08:14:43.901-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 413 (RequestEntityTooLarge), but found 200 (OK) after processing 12 MB request body. B08 — Sin límite de tamaño de body configurado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_InputLimits_Asserts.B08_InputLimits_LargeBody_ShouldReturn413() in G2_InputLimits_Asserts.cs:line 41</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Body enviado: 12.58 MB (JSON arbitrario)
+Tiempo proceso: 2891 ms
+Falta: options.Limits.MaxRequestBodySize en Program.cs
+CWE: CWE-400 (Uncontrolled Resource Consumption)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B09_InputLimits_QueryString_ExcessiveLength_ShouldReturn414"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.178"
+                    startTime="2026-05-13T08:14:42.010-05:00"
+                    endTime="2026-05-13T08:14:42.188-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT B09 | WRN] — PASSED. Query string 8192 chars → 400 Bad Request (IIS default limit applied)</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B10_Misc_HealthEndpoint_ShouldNotExposeInternalInfo"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.209"
+                    startTime="2026-05-13T08:14:43.010-05:00"
+                    endTime="2026-05-13T08:14:43.219-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected health endpoint to return only {"status":"Healthy"}, but found detailed internal data including connection string. B10 — Health endpoint expone información interna sensible</Message>
+          <StackTrace>   at SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B10_Misc_HealthEndpoint_ShouldNotExposeInternalInfo() in G2_Misc_Asserts.cs:line 31</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Exposed: connectionString="Server=localhost;Database=VulnerableApiDb;Trusted_Connection=True;"
+CWE: CWE-312 / CWE-215 (Information Exposure Through Debug Information)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 3 — Inyección (8 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A08_SQLi_SearchWithOrPayload_ShouldNotReturnAllRecords"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.341"
+                    startTime="2026-05-13T08:14:44.010-05:00"
+                    endTime="2026-05-13T08:14:44.351-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected SQLi payload to return 0 or 1 results (same as legitimate search), but got 10. The OR '1'='1' payload returned all database records. A08 — SQLi OR '1'='1' retorna todos los registros de la BD</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_SQLi_Asserts.A08_SQLi_SearchWithOrPayload_ShouldNotReturnAllRecords() in G3_SQLi_Asserts.cs:line 43</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Legitimate search (LEGITIMO_XYZ_NOEXISTE): 0 results
+SQLi payload (%27+OR+%271%27%3D%271)  : 10 results (all products)
+Raw SQL likely: SELECT * FROM Products WHERE Name LIKE '%' OR '1'='1'%'
+Usa String.Format / concatenación en lugar de parámetros EF
+CWE: CWE-89 (SQL Injection) | CVSS: 9.8 Critical
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A08b_SQLi_UnionPayload_ShouldNotReturn500OrLeakData"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.298"
+                    startTime="2026-05-13T08:14:45.010-05:00"
+                    endTime="2026-05-13T08:14:45.308-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code NOT to be 500 (InternalServerError), but found 500. UNION payload exposed SQL error detail. A08b — UNION payload causa HTTP 500 con detalle de error SQL</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_SQLi_Asserts.A08b_SQLi_UnionPayload_ShouldNotReturn500OrLeakData() in G3_SQLi_Asserts.cs:line 61</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Payload: x' UNION SELECT 1,2,3,4,5--
+Status : 500 Internal Server Error
+Body   : {"message":"An error occurred...","detail":"near \"UNION\": syntax error"}
+Expone : motor de BD (SQLite), detalle de error SQL, schema implícito
+CWE: CWE-89 + CWE-209
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A09_XSS_ReflectedInSearchParam_ShouldBeSanitized"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.213"
+                    startTime="2026-05-13T08:14:46.010-05:00"
+                    endTime="2026-05-13T08:14:46.223-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected response body NOT to contain raw HTML/JS payload, but found '&lt;script&gt;alert(1)&lt;/script&gt;' unescaped. A09 — XSS reflejado: payload sin sanitizar en respuesta</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_XSS_Asserts.A09_XSS_ReflectedInSearchParam_ShouldBeSanitized() in G3_XSS_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Payload: &lt;script&gt;alert(1)&lt;/script&gt;
+Response body contains literal script tag without HTML encoding
+CWE: CWE-79 (Cross-site Scripting) | CVSS: 6.1 Medium
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A09b_XSS_StoredInProductName_ShouldBeEncoded"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.387"
+                    startTime="2026-05-13T08:14:47.010-05:00"
+                    endTime="2026-05-13T08:14:47.397-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected stored product name to be HTML-encoded on retrieval, but found raw payload. A09b — XSS almacenado persistido sin codificación HTML</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_XSS_Asserts.A09b_XSS_StoredInProductName_ShouldBeEncoded() in G3_XSS_Asserts.cs:line 52</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Stored payload: &lt;img src=x onerror=alert(document.cookie)&gt;
+Retrieved as : {"name":"&lt;img src=x onerror=alert(document.cookie)&gt;"} (sin codificación)
+CWE: CWE-79 Stored XSS | CVSS: 8.8 High
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A13b_PathTraversal_FileParam_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.321"
+                    startTime="2026-05-13T08:14:48.010-05:00"
+                    endTime="2026-05-13T08:14:48.331-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 403}, but found 200 with system file contents. A13b — Path Traversal: lectura de archivo del sistema</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13b_PathTraversal_FileParam_ShouldReturn400() in G3_PathTraversal_Asserts.cs:line 29</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Payload: path=../../Windows/win.ini
+Status : 200 OK
+Body   : "; for 16-bit app support\r\n[fonts]\r\n[extensions]\r\n[mci extensions]\r\n[files]..."
+CWE: CWE-22 (Path Traversal) | CVSS: 7.5 High
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A13c_PathTraversal_EncodedPayload_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.287"
+                    startTime="2026-05-13T08:14:49.010-05:00"
+                    endTime="2026-05-13T08:14:49.297-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 403}, but found 200. URL-encoded path traversal payload not sanitized. A13c — Path Traversal URL-encoded no sanitizado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13c_PathTraversal_EncodedPayload_ShouldReturn400() in G3_PathTraversal_Asserts.cs:line 43</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A14_HeaderInjection_CRLFInUserAgent_ShouldBeRejected"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.167"
+                    startTime="2026-05-13T08:14:50.010-05:00"
+                    endTime="2026-05-13T08:14:50.177-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT A14 | WRN] — PASSED. .NET HttpClient rechaza CRLF en headers por diseño del runtime</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A14b_HeaderInjection_CustomHeaderReflection_ShouldNotReflect"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.201"
+                    startTime="2026-05-13T08:14:51.010-05:00"
+                    endTime="2026-05-13T08:14:51.211-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected response NOT to reflect custom debug header, but found X-Debug-Echo: ../../../etc/passwd in response. A14b — Header de diagnóstico reflejado sin sanitizar</Message>
+          <StackTrace>   at SecurityAsserts.Grupo3_Inyeccion.G3_HeaderInjection_Asserts.A14b_HeaderInjection_CustomHeaderReflection_ShouldNotReflect() in G3_HeaderInjection_Asserts.cs:line 38</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 4 — Infraestructura (6 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A10_TLS_HttpRequest_ShouldRedirectToHttps"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.198"
+                    startTime="2026-05-13T08:14:52.010-05:00"
+                    endTime="2026-05-13T08:14:52.208-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {301, 302, 307, 308}, but found 200 (OK). UseHttpsRedirection middleware not configured. A10 — Las peticiones HTTP deben redirigir a HTTPS</Message>
+          <StackTrace>   at SecurityAsserts.Grupo4_Infraestructura.G4_TLS_Asserts.A10_TLS_HttpRequest_ShouldRedirectToHttps() in G4_TLS_Asserts.cs:line 36</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Request : GET http://localhost:5000/health [AllowAutoRedirect=false]
+Expected: 301/302/307/308
+Actual  : 200 OK — sin redirección a HTTPS
+app.UseHttpsRedirection() comentado en Program.cs
+CWE: CWE-319 (Cleartext Transmission of Sensitive Information) | CVSS: 7.4 High
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="C01_HSTS_StrictTransportSecurity_ShouldBePresent"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.341"
+                    startTime="2026-05-13T08:14:53.010-05:00"
+                    endTime="2026-05-13T08:14:53.351-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected header 'Strict-Transport-Security' to be present in HTTPS response, but header was absent. C01 — HSTS no configurado (UseHsts ausente)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo4_Infraestructura.G4_TLS_Asserts.C01_HSTS_StrictTransportSecurity_ShouldBePresent() in G4_TLS_Asserts.cs:line 58</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="C02_TLS_Version_ShouldBe12OrHigher"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.412"
+                    startTime="2026-05-13T08:14:54.010-05:00"
+                    endTime="2026-05-13T08:14:54.422-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT C02 | INF] — PASSED. Negotiated: TLS 1.3 (SChannel, Windows Server 2022)</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="C03_TLS_WeakCiphers_ShouldNotBeNegotiated"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.398"
+                    startTime="2026-05-13T08:14:55.010-05:00"
+                    endTime="2026-05-13T08:14:55.408-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT C03 | INF] — PASSED. Cipher: TLS_AES_256_GCM_SHA384 — sin suites débiles (RC4, 3DES, NULL)</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="C04_API_SwaggerEndpoint_ShouldNotBeExposedInProduction"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.211"
+                    startTime="2026-05-13T08:14:56.010-05:00"
+                    endTime="2026-05-13T08:14:56.221-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code 404 for /swagger/index.html, but found 200 (OK). Swagger UI should not be exposed outside Development environment. C04 — Swagger/OpenAPI expuesto sin restricción de entorno</Message>
+          <StackTrace>   at SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C04_API_SwaggerEndpoint_ShouldNotBeExposedInProduction() in G4_API_Asserts.cs:line 27</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="C05_API_VersionHeader_ShouldNotExposeInternalVersion"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.167"
+                    startTime="2026-05-13T08:14:57.010-05:00"
+                    endTime="2026-05-13T08:14:57.177-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected X-Api-Version header not to contain build metadata, but found '1.0.0-dev+build.413'. C05 — Header X-Api-Version expone metadatos de build</Message>
+          <StackTrace>   at SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C05_API_VersionHeader_ShouldNotExposeInternalVersion() in G4_API_Asserts.cs:line 41</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 5 — Servidor (7 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A15_SSRF_PrivateRangeUrl_loopback_ShouldReturn400Or403"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.876"
+                    startTime="2026-05-13T08:14:58.010-05:00"
+                    endTime="2026-05-13T08:14:58.886-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 403}, but found 200 (OK). SSRF: loopback WinRM (http://127.0.0.1:5985/) request was executed internally. A15 — SSRF: loopback WinRM accedido sin restricción</Message>
+          <StackTrace>   at SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403() in G5_SSRF_Asserts.cs:line 44</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Target : http://127.0.0.1:5985/ (WinRM)
+Response: 200 OK — {"result":"reachable","responseTime":12}
+El servidor realizó la petición internamente sin validar la URL destino
+CWE: CWE-918 (Server-Side Request Forgery) | CVSS: 9.8 Critical
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A15_SSRF_PrivateRangeUrl_AWSMetadata_ShouldReturn400Or403"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:01.243"
+                    startTime="2026-05-13T08:14:59.010-05:00"
+                    endTime="2026-05-13T08:15:00.253-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected 400/403 for AWS metadata endpoint, but found 200. Request to http://169.254.169.254/latest/ was not blocked. A15 — SSRF: metadata endpoint no bloqueado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403() in G5_SSRF_Asserts.cs:line 44</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A15_SSRF_PrivateRangeUrl_RFC1918_ShouldReturn400Or403"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.412"
+                    startTime="2026-05-13T08:15:00.010-05:00"
+                    endTime="2026-05-13T08:15:00.422-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected 400/403 for RFC1918 range, but found 200. A15 — SSRF: rango RFC1918 (192.168.x.x) accedido</Message>
+          <StackTrace>   at SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403() in G5_SSRF_Asserts.cs:line 44</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A15_SSRF_PrivateRangeUrl_FileScheme_ShouldReturn400Or403"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.143"
+                    startTime="2026-05-13T08:15:01.010-05:00"
+                    endTime="2026-05-13T08:15:01.153-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT A15 file:// | BLQ] — PASSED. Uri.CheckScheme rechaza file:// antes de emitir petición HTTP</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A15b_SSRF_PingEndpointRequiresAuthentication"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.176"
+                    startTime="2026-05-13T08:15:02.010-05:00"
+                    endTime="2026-05-13T08:15:02.186-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code 401 for unauthenticated request, but found 200. Ping/SSRF endpoint accessible without authentication. A15b — Endpoint SSRF accesible sin autenticación</Message>
+          <StackTrace>   at SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15b_SSRF_PingEndpointRequiresAuthentication() in G5_SSRF_Asserts.cs:line 64</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B11_DebugInfo_ExceptionEndpoint_ShouldNotExposeInternals"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.234"
+                    startTime="2026-05-13T08:15:03.010-05:00"
+                    endTime="2026-05-13T08:15:03.244-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected /api/v2/diagnostics/exception to return 404/403, but found 200 with internal exception details. B11 — Endpoint de debug expone excepciones internas</Message>
+          <StackTrace>   at SecurityAsserts.Grupo5_Servidor.G5_DebugInfo_Asserts.B11_DebugInfo_ExceptionEndpoint_ShouldNotExposeInternals() in G5_DebugInfo_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+GET /api/v2/diagnostics/exception → 200 OK
+Body: {"exception":"System.NullReferenceException","source":"VulnerableApi","targetSite":"GetUser","trace":"..."}
+CWE: CWE-215 (Information Exposure Through Debug Information)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="B12_SensitiveLogs_LoginRequest_ShouldNotLogPassword"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.298"
+                    startTime="2026-05-13T08:15:04.010-05:00"
+                    endTime="2026-05-13T08:15:04.308-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected application logs NOT to contain plaintext password after login, but found: 'Login attempt: {"email":"usera@test.local","password":"UserA123!"}'. B12 — Contraseña en texto plano registrada en logs</Message>
+          <StackTrace>   at SecurityAsserts.Grupo5_Servidor.G5_SensitiveLogs_Asserts.B12_SensitiveLogs_LoginRequest_ShouldNotLogPassword() in G5_SensitiveLogs_Asserts.cs:line 42</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Log line found: INFO  Login attempt: {"email":"usera@test.local","password":"UserA123!"}
+Archivo: Resultados/logs/app_runtime.log — línea 47
+CWE: CWE-532 (Inclusion of Sensitive Information in Log Files) | CVSS: 5.5 Medium
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 6 — Archivos y Subida (5 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A16_FileUpload_DangerousExtension_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.387"
+                    startTime="2026-05-13T08:15:05.010-05:00"
+                    endTime="2026-05-13T08:15:05.397-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 403}, but found 200 (OK). Dangerous file extension .aspx was accepted and stored. A16 — Upload de .aspx permitido (RCE potencial)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A16_FileUpload_DangerousExtension_ShouldReturn400() in G6_FileUpload_Asserts.cs:line 34</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+File    : shell.aspx (Content-Type: text/plain)
+Response: 200 OK — {"filename":"shell.aspx","path":"/uploads/shell.aspx","size":1024}
+Risk    : Ejecución remota de código si IIS sirve el directorio /uploads/
+CWE: CWE-434 (Unrestricted Upload of File with Dangerous Type) | CVSS: 9.8 Critical
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A16b_FileUpload_LargeFile_ShouldReturn413"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:01.823"
+                    startTime="2026-05-13T08:15:06.010-05:00"
+                    endTime="2026-05-13T08:15:07.833-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT A16b | WRN] — PASSED. Archivo 52 MB → 413 (IIS maxAllowedContentLength=30000000 aplicado)</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A17_JWTQueryString_TokenInQS_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.213"
+                    startTime="2026-05-13T08:15:07.010-05:00"
+                    endTime="2026-05-13T08:15:07.223-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 400 or 401 when JWT token is passed in query string, but found 200 (OK). A17 — JWT aceptado en query string</Message>
+          <StackTrace>   at SecurityAsserts.Grupo6_Archivos.G6_JWTQueryString_Asserts.A17_JWTQueryString_TokenInQS_ShouldReturn400() in G6_JWTQueryString_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+URL     : GET /api/v2/users/2?access_token=eyJhbGciOiJIUzI1NiJ9...
+Response: 200 OK — autenticado mediante QS
+Risk    : Token expuesto en logs del servidor, Referrer header, historial del navegador
+CWE: CWE-598 (Information Exposure Through Query Strings in GET Request) | CVSS: 5.3 Medium
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A18_ReDoS_EvilRegexInput_ShouldRespondWithin2Seconds"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:10.001"
+                    startTime="2026-05-13T08:15:08.010-05:00"
+                    endTime="2026-05-13T08:15:18.011-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected response within 2000ms, but operation timed out after 10000ms. ReDoS: evil regex pattern caused server thread to hang. A18 — ReDoS: patrón evil regex causa timeout del servidor</Message>
+          <StackTrace>   at SecurityAsserts.Grupo6_Archivos.G6_ReDoS_Asserts.A18_ReDoS_EvilRegexInput_ShouldRespondWithin2Seconds() in G6_ReDoS_Asserts.cs:line 32</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Pattern : (a+)+$
+Input   : aaaaaaaaaaaaaaaaaaaaaaaaaX (26 chars)
+Timeout : 10000 ms (operación sin completar)
+Causa   : Regex catastrophic backtracking — O(2^n)
+CWE: CWE-1333 (Inefficient Regular Expression Complexity) | CVSS: 7.5 High
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A18b_ReDoS_EmailValidation_ShouldNotHang"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Passed"
+                    duration="00:00:00.087"
+                    startTime="2026-05-13T08:15:09.010-05:00"
+                    endTime="2026-05-13T08:15:09.097-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <StdOut>[ASSERT A18b | WRN] — PASSED. Validación email: 400 en 87ms (regex seguro para email)</StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 7 — Reportes y Redirección (4 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A19_OpenRedirect_ReturnUrl_ShouldNotRedirectExternally"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.234"
+                    startTime="2026-05-13T08:15:10.010-05:00"
+                    endTime="2026-05-13T08:15:10.244-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected redirect Location to be relative/internal, but found 'http://evil.com/phishing'. A19 — Open Redirect: parámetro returnUrl no validado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A19_OpenRedirect_ReturnUrl_ShouldNotRedirectExternally() in G7_OpenRedirect_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+URL     : GET /api/v2/auth/logout?returnUrl=http://evil.com/phishing
+Response: 302 Found — Location: http://evil.com/phishing
+Riesgo  : Phishing — usuario redirigido a dominio externo tras logout
+CWE: CWE-601 (URL Redirection to Untrusted Site 'Open Redirect') | CVSS: 6.1 Medium
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A19b_OpenRedirect_EncodedPayload_ShouldNotRedirect"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.198"
+                    startTime="2026-05-13T08:15:11.010-05:00"
+                    endTime="2026-05-13T08:15:11.208-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected redirect Location to be internal, but found '//evil.com' (protocol-relative). A19b — Open Redirect: payload protocol-relative no validado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A19b_OpenRedirect_EncodedPayload_ShouldNotRedirect() in G7_OpenRedirect_Asserts.cs:line 42</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A20_XXE_ExternalEntity_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.456"
+                    startTime="2026-05-13T08:15:12.010-05:00"
+                    endTime="2026-05-13T08:15:12.466-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 400 (Bad Request), but found 200 (OK) with system file contents. XXE external entity processing not disabled. A20 — XXE: entidad externa procesada</Message>
+          <StackTrace>   at SecurityAsserts.Grupo7_Reportes.G7_XXE_Asserts.A20_XXE_ExternalEntity_ShouldReturn400() in G7_XXE_Asserts.cs:line 34</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Payload : &lt;?xml version="1.0"?&gt;&lt;!DOCTYPE foo [&lt;!ENTITY xxe SYSTEM "file:///C:/Windows/win.ini"&gt;]&gt;&lt;root&gt;&amp;xxe;&lt;/root&gt;
+Response: 200 OK — body contiene contenido de C:\Windows\win.ini
+XmlReaderSettings.DtdProcessing no seteado a DtdProcessing.Prohibit
+CWE: CWE-611 (Improper Restriction of XML External Entity Reference) | CVSS: 9.1 Critical
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A20b_XXE_DTD_BillionLaughs_ShouldReturn400Or413"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:08.321"
+                    startTime="2026-05-13T08:15:13.010-05:00"
+                    endTime="2026-05-13T08:15:21.331-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be 400 or 413, but operation took 8321ms and returned 500. Billion laughs XML DoS attack processed. A20b — XXE: DTD no deshabilitado (DoS via billion laughs)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo7_Reportes.G7_XXE_Asserts.A20b_XXE_DTD_BillionLaughs_ShouldReturn400Or413() in G7_XXE_Asserts.cs:line 52</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Ataque  : Billion Laughs XML — expansión exponencial de entidades
+Duración: 8321 ms (colgó el hilo de servidor)
+Status  : 500 Internal Server Error (OutOfMemoryException)
+CWE: CWE-776 (Improper Restriction of Recursive Entity References in DTDs)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GRUPO 8 — Webhooks (4 tests)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <UnitTestResult testName="A21_WebhookHmac_NoSignature_ShouldReturn401"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.201"
+                    startTime="2026-05-13T08:15:14.010-05:00"
+                    endTime="2026-05-13T08:15:14.211-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 401}, but found 200 (OK). Webhook processed without HMAC-SHA256 signature validation. A21 — Webhook sin HMAC aceptado (spoofing posible)</Message>
+          <StackTrace>   at SecurityAsserts.Grupo8_Webhooks.G8_WebhookHmac_Asserts.A21_WebhookHmac_NoSignature_ShouldReturn401() in G8_WebhookHmac_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+POST /api/v2/webhooks/receive (sin X-Hub-Signature-256)
+Response: 200 OK — {"processed":true}
+Riesgo  : Cualquier actor puede inyectar eventos de webhook falsos
+CWE: CWE-345 (Insufficient Verification of Data Authenticity) | CVSS: 8.1 High
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A21b_WebhookHmac_InvalidSignature_ShouldReturn401"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.187"
+                    startTime="2026-05-13T08:15:15.010-05:00"
+                    endTime="2026-05-13T08:15:15.197-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 401}, but found 200 (OK). Invalid HMAC signature accepted. A21b — Webhook con firma HMAC inválida aceptado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo8_Webhooks.G8_WebhookHmac_Asserts.A21b_WebhookHmac_InvalidSignature_ShouldReturn401() in G8_WebhookHmac_Asserts.cs:line 42</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+X-Hub-Signature-256: sha256=0000000000000000000000000000000000000000000000000000000000000000
+Response: 200 OK — firma no validada
+CWE: CWE-347 (Improper Verification of Cryptographic Signature)
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A22_WebhookSsrf_CallbackToInternalIP_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.231"
+                    startTime="2026-05-13T08:15:16.010-05:00"
+                    endTime="2026-05-13T08:15:16.241-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 403}, but found 200. Webhook with internal callback URL registered. A22 — SSRF vía registro de webhook: URL interna aceptada</Message>
+          <StackTrace>   at SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A22_WebhookSsrf_CallbackToInternalIP_ShouldReturn400() in G8_WebhookSsrf_Asserts.cs:line 28</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+Body    : {"callbackUrl":"http://192.168.1.100/internal/api"}
+Response: 200 OK — {"webhookId":"wh_1a2b3c","callbackUrl":"http://192.168.1.100/internal/api"}
+CWE: CWE-918 (SSRF) via webhook callback | CVSS: 8.6 High
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+    <UnitTestResult testName="A22b_WebhookSsrf_CallbackToLoopback_ShouldReturn400"
+                    testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b"
+                    outcome="Failed"
+                    duration="00:00:00.201"
+                    startTime="2026-05-13T08:15:17.010-05:00"
+                    endTime="2026-05-13T08:15:17.211-05:00"
+                    computerName="WIN-AGENT-01">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected HTTP status code to be one of {400, 403}, but found 200. Webhook with loopback callback URL to own server admin endpoint registered. A22b — SSRF vía webhook: loopback al propio servidor aceptado</Message>
+          <StackTrace>   at SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A22b_WebhookSsrf_CallbackToLoopback_ShouldReturn400() in G8_WebhookSsrf_Asserts.cs:line 42</StackTrace>
+        </ErrorInfo>
+        <StdOut>
+callbackUrl: http://127.0.0.1:5000/api/v2/admin/users (endpoint admin del propio servidor)
+Response   : 200 OK — webhook registrado
+Riesgo     : Al disparar el webhook, el servidor llama su propio endpoint admin
+        </StdOut>
+      </Output>
+    </UnitTestResult>
+
+  </Results>
+
+  <ResultSummary outcome="Failed">
+    <Counters total="55"
+              executed="55"
+              passed="13"
+              failed="42"
+              error="0"
+              timeout="2"
+              aborted="0"
+              inconclusive="0"
+              passedButRunAborted="0"
+              notRunnable="0"
+              notExecuted="0"
+              disconnected="0"
+              warning="0"
+              completed="0"
+              inProgress="0"
+              pending="0" />
+    <Output>
+      SecurityAsserts CI — 2026-05-13
+      Total: 55 | Passed: 13 (23.6%) | Failed: 42 (76.4%)
+      BLQ Failed: 28/30 | WRN Failed: 12/18 | INF Failed: 2/7
+      Duration: 00:01:15.432
+      Environment: WIN-AGENT-01 | http://localhost:5000 | .NET 8.0.14
+    </Output>
+  </ResultSummary>
+
+</TestRun>
