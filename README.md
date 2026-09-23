@@ -1,12 +1,15 @@
 # Inyector — Pool de Asserts de Seguridad (xUnit)
 
-Proyecto xUnit con **75 asserts** (99 test cases paramétricos) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
+Proyecto xUnit con **76 asserts** (100 test cases paramétricos) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
 
 > **Nota de verificación (2026-09-23):** el conteo de 75 asserts fue confirmado contra el código
 > (75 métodos `[Fact]`/`[Theory]` decorados con `[Trait("Assert", ...)]`, 67 `[Fact]` + 8 `[Theory]`
 > con 32 `[InlineData]` = 99 test cases). Los 30 asserts adicionales a los 45 IDs base
 > (A01–A28, B01–B11, C01–C06) usan sufijos `b`/`c`/`d` (p. ej. `A06b`, `A18c`, `A16d`) y ahora
 > están documentados en la Tabla A.0 de la sección 6.
+>
+> **Actualización (2026-09-23, subida de cobertura):** se agregó `A12c` para cerrar el gap de
+> detección de G2-V3 (DeveloperExceptionPage) — ver sección 6 para el detalle y hallazgos.
 
 | Escenario | Target | Puerto | Objetivo |
 |-----------|--------|--------|---------|
@@ -417,7 +420,7 @@ Inyector/
 │   ├── G2_Headers_Asserts.cs            ← B01–B05
 │   ├── G2_CORS_Asserts.cs               ← B06, B06b
 │   ├── G2_Misc_Asserts.cs               ← B07, B08, B09
-│   ├── G2_ErrorInfo_Asserts.cs          ← A12, A12b
+│   ├── G2_ErrorInfo_Asserts.cs          ← A12, A12b, A12c
 │   └── G2_InputLimits_Asserts.cs        ← B10, B10b, B11, B11b
 ├── Grupo3_Inyeccion/
 │   ├── G3_SQLi_Asserts.cs               ← A08, A08b
@@ -443,7 +446,7 @@ Inyector/
     └── G8_WebhookSsrf_Asserts.cs        ← A27, A27b, A27c
 ```
 
-> **75 asserts totales** (45 IDs base + 30 variantes con sufijo `b`/`c`/`d`). Ver Tabla A.0 en la sección 6.
+> **76 asserts totales** (45 IDs base + 31 variantes con sufijo `b`/`c`/`d`). Ver Tabla A.0 en la sección 6.
 
 ---
 
@@ -478,6 +481,7 @@ Inyector/
 | A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse | 10/10 | 10/10 |
 | A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces | 10/10 | 10/10 |
 | A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework | 10/10 | 10/10 |
+| A12c | BLQ | 1 | API8:2023 | SqliteException no manejada (comilla en /products/search) no expone stack trace | *nuevo* | *nuevo* |
 | A13 | BLQ | 1 | API3:2023 | Path Traversal — descarga fuera del directorio base | 0/10 | 10/10 |
 | A13b | BLQ | 1 | API3:2023 | Path Traversal — payloads codificados (paramétrico x3) no retornan 200 con contenido sensible | 0/30 | 30/30 |
 | A13c | BLQ | 1 | API3:2023 | Path Traversal — contenido de appsettings.json no expuesto | 0/10 | 10/10 |
@@ -542,7 +546,24 @@ Inyector/
 > 10/10 — indica que esas correcciones (HTTPS redirect, paginación, rate limiting, TLS 1.2)
 > no están aplicadas en `VulnerableApi_Patched` a la fecha del run 2026-05-15.
 
+### Subida de cobertura por vulnerabilidad ground-truth (2026-09-23)
+
+Frente al inventario de 28 vulnerabilidades ground-truth de `VulnerableApi` (comentarios
+`G#-V#` en el código fuente), 6 no eran detectadas por ningún assert: `G1-V4`, `G2-V3`,
+`G2-V8`, `G3-V4`, `G5-V2`, `G6-V3`. Se investigó cada una contra el código de
+`VulnerableApi`/`VulnerableApi_Patched` y se corrigió lo viable dentro del alcance de un
+test suite HTTP-only:
+
+| Ground-truth | Causa raíz | Acción tomada |
+|---|---|---|
+| **G2-V3** (`app.UseDeveloperExceptionPage()` activo) | A12/A12b solo disparaban errores 400 de model-binding, nunca una excepción real sin capturar | ✅ Agregado `A12c`: fuerza una `SqliteException` sin manejar vía `GET /products/search?name=%27` (comilla desbalanceada en el `FromSqlRaw`). Verificado manualmente: **falla contra `VulnerableApi`** (stack trace completo expuesto) y debe pasar contra la API parcheada |
+| **G6-V3** (Regex sin timeout / ReDoS) | Los inputs de 19–20 caracteres en A25 resolvían en milisegundos, sin cancelar por el `CancellationTokenSource(2s)` | ⚠️ Se aumentó la longitud de los payloads catastróficos (≥26 caracteres). Calibración manual (`n` hasta 45, y patrones alternativos como `(x+x+)+y`) mostró que **.NET 8 optimiza automáticamente estos patrones clásicos de backtracking** y responde en <110 ms incluso sin `matchTimeout` configurado — el ground-truth G6-V3 parece mitigado a nivel de runtime en esta versión de .NET, no solo por la app. Documentado como limitación conocida en vez de forzar un falso positivo |
+| **G5-V2** / **G2-V8** (credenciales y payload de webhook en logs de `ILogger`) | Ambas vulnerabilidades solo son observables en los logs del proceso servidor, no en la respuesta HTTP — fuera del alcance de un cliente HTTP puro | ⏸️ Pendiente: requiere que `VulnerableApi` escriba a un sink de archivo (p. ej. `Logging:File`) accesible desde `SecurityAsserts` en la misma máquina, y un helper que lo lea. No implementado en esta iteración |
+| **G1-V4** (JWT sin `ValidateLifetime`) | A07 usa un JWT expirado pre-firmado; si la firma no valida, el 401 no prueba la ausencia de validación de `exp` específicamente | ⏸️ Pendiente: requiere firmar un JWT válido en tiempo real con la clave conocida (`weak-key`) y `exp` en el pasado para aislar la causa del 401 |
+| **G3-V4** (CRLF / header injection) | A24 ya envía payloads `%0d%0a` codificados que llegan al servidor sin excepción cliente, pero el header inyectado nunca aparece | ⏸️ Kestrel/`HttpResponseHeaders` en .NET 8 valida y rechaza caracteres de control en valores de cabecera por defecto — posible mitigación de runtime, no de la app. Requiere más investigación antes de forzar un assert |
+
 ### Cobertura OWASP API Security Top 10 (2023)
+
 
 | Categoría OWASP | Nombre | Asserts que la cubren |
 |----------------|--------|----------------------|
@@ -568,7 +589,7 @@ Inyector/
 | Cobertura OWASP API Top 10 | **10/10** | Todas las categorías del top 10 cubiertas |
 | Tiempo total de ejecución | A: ~14.5 s / B: ~800 ms | Por run (Escenario A: avg 14,495 ms; Escenario B: avg 772 ms) |
 | Asserts BLQ fallidos | = 0 (Escenario B) | Quality gate de deploy: ninguno puede fallar en la API parcheada |
-| Total asserts implementados | **75 IDs / 99 test cases** | 67 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 99 test cases; verificado contra el código el 2026-09-23 |
+| Total asserts implementados | **76 IDs / 100 test cases** | 68 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 100 test cases; A12c agregado el 2026-09-23 |
 
 ---
 

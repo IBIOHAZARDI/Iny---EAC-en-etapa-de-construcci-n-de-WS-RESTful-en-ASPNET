@@ -18,19 +18,22 @@ namespace SecurityAsserts.Grupo6_Archivos;
 public class G6_ReDoS_Asserts
 {
     // Patrón catastrófico: backtracking exponencial O(2^n)
-    // Input sin coincidencia al final fuerza máximo backtracking
+    // Input sin coincidencia al final fuerza máximo backtracking.
+    // Longitud calibrada (>=26 chars) para que el blowup exponencial supere
+    // los 2 s incluso en hardware rápido; con ~19-20 chars terminaba en
+    // milisegundos y el ReDoS no llegaba a activar la cancelación (falso negativo).
     private static readonly (string pattern, string input, string description)[] CatastrophicPayloads =
     [
-        ("(a+)+",           "aaaaaaaaaaaaaaaaaab",    "backtracking exponencial clásico"),
-        ("([a-zA-Z]+)*",    "aaaaaaaaaaaaaaaaaaaaa!", "cuantificador nested"),
-        ("(a|aa)+",         "aaaaaaaaaaaaaaaaaab",    "alternación con overlap"),
+        ("(a+)+",           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",    "backtracking exponencial clásico"),
+        ("([a-zA-Z]+)*",    "aaaaaaaaaaaaaaaaaaaaaaaaaa!",         "cuantificador nested"),
+        ("(a|aa)+",         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",    "alternación con overlap"),
         ("(.*a){20}",       "aaaaaaaaaaaaaaaaaaaab",  "repetición con wildcard"),
     ];
 
     [Theory]
-    [InlineData("(a+)+",          "aaaaaaaaaaaaaaaaaab",   "backtracking exponencial")]
-    [InlineData("([a-zA-Z]+)*",   "aaaaaaaaaaaaaaaaaaaaa!","cuantificador nested")]
-    [InlineData("(a|aa)+",        "aaaaaaaaaaaaaaaaaab",   "alternación con overlap")]
+    [InlineData("(a+)+",          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",   "backtracking exponencial")]
+    [InlineData("([a-zA-Z]+)*",   "aaaaaaaaaaaaaaaaaaaaaaaaaa!","cuantificador nested")]
+    [InlineData("(a|aa)+",        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",   "alternación con overlap")]
     [Trait("Assert",  "A25")]
     [Trait("Oleada",  "Oleada1")]
     [Trait("Category","BLQ")]

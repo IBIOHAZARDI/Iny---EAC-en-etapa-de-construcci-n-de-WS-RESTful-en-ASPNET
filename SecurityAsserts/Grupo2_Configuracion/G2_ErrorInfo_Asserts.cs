@@ -51,4 +51,30 @@ public class G2_ErrorInfo_Asserts
             new[] { "Exception", "StackTrace", "Microsoft.AspNetCore", "System.Private" },
             because: "A12b — Rutas inexistentes no deben exponer detalles del framework");
     }
+
+    // A12c provoca una SqliteException real y sin capturar (comilla desbalanceada en
+    // FromSqlRaw de ProductsController) para ejercer efectivamente DeveloperExceptionPage,
+    // a diferencia de A12/A12b que solo activan errores de model-binding (400).
+    [Fact]
+    [Trait("Assert",  "A12c")]
+    [Trait("Oleada",  "Oleada1")]
+    [Trait("Category","BLQ")]
+    [Trait("OWASP",   "API8:2023")]
+    public async Task A12c_ErrorInfo_UnhandledSqlException_ShouldNotExposeStackTrace()
+    {
+        using var client = TestConfig.CreateClient();
+
+        // Comilla simple desbalanceada rompe la sintaxis SQL en FromSqlRaw y
+        // lanza una SqliteException sin manejar -> DeveloperExceptionPage si está activo.
+        var response = await client.GetAsync("/api/v2/products/search?name=%27");
+
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError,
+            because: "A12c — El error SQL desbalanceado debe llegar como excepción no manejada (500)");
+
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().NotContainAny(
+            new[] { "StackTrace", "at System.", "at Microsoft.", "SqliteException", ".cs:line " },
+            because: "A12c — El 500 no debe exponer stack trace ni el tipo de excepción SQL interna");
+    }
 }
+
