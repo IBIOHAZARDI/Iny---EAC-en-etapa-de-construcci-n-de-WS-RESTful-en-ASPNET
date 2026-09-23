@@ -1,6 +1,12 @@
 # Inyector — Pool de Asserts de Seguridad (xUnit)
 
-Proyecto xUnit con **55 asserts** (99 test cases paramétricos) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
+Proyecto xUnit con **75 asserts** (99 test cases paramétricos) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
+
+> **Nota de verificación (2026-09-23):** el conteo de 75 asserts fue confirmado contra el código
+> (75 métodos `[Fact]`/`[Theory]` decorados con `[Trait("Assert", ...)]`, 67 `[Fact]` + 8 `[Theory]`
+> con 32 `[InlineData]` = 99 test cases). Los 30 asserts adicionales a los 45 IDs base
+> (A01–A28, B01–B11, C01–C06) usan sufijos `b`/`c`/`d` (p. ej. `A06b`, `A18c`, `A16d`) y ahora
+> están documentados en la Tabla A.0 de la sección 6.
 
 | Escenario | Target | Puerto | Objetivo |
 |-----------|--------|--------|---------|
@@ -404,42 +410,49 @@ Inyector/
 │   ├── G1_BOLA_Asserts.cs               ← A01, A02
 │   ├── G1_Auth_Asserts.cs               ← A03, A04, A07, A11
 │   ├── G1_MassAssignment_Asserts.cs     ← A05
-│   ├── G1_BFLA_Asserts.cs               ← A06
-│   ├── G1_SensitiveData_Asserts.cs      ← A18
+│   ├── G1_BFLA_Asserts.cs               ← A06, A06b
+│   ├── G1_SensitiveData_Asserts.cs      ← A18, A18b, A18c
 │   └── G1_IDOR_Asserts.cs              ← A19, A20, A21
 ├── Grupo2_Configuracion/
 │   ├── G2_Headers_Asserts.cs            ← B01–B05
-│   ├── G2_CORS_Asserts.cs               ← B06
+│   ├── G2_CORS_Asserts.cs               ← B06, B06b
 │   ├── G2_Misc_Asserts.cs               ← B07, B08, B09
-│   ├── G2_ErrorInfo_Asserts.cs          ← A12
-│   └── G2_InputLimits_Asserts.cs        ← B10, B11
+│   ├── G2_ErrorInfo_Asserts.cs          ← A12, A12b
+│   └── G2_InputLimits_Asserts.cs        ← B10, B10b, B11, B11b
 ├── Grupo3_Inyeccion/
-│   ├── G3_SQLi_Asserts.cs               ← A08
-│   ├── G3_XSS_Asserts.cs               ← A09
-│   ├── G3_PathTraversal_Asserts.cs      ← A13
-│   └── G3_HeaderInjection_Asserts.cs   ← A24
+│   ├── G3_SQLi_Asserts.cs               ← A08, A08b
+│   ├── G3_XSS_Asserts.cs               ← A09, A09b
+│   ├── G3_PathTraversal_Asserts.cs      ← A13, A13b, A13c
+│   └── G3_HeaderInjection_Asserts.cs   ← A24, A24b
 ├── Grupo4_Infraestructura/
 │   ├── G4_TLS_Asserts.cs               ← A10, C01, C02, C03
 │   └── G4_API_Asserts.cs               ← C04, C05, C06
 ├── Grupo5_Servidor/
-│   ├── G5_SSRF_Asserts.cs              ← A15
-│   ├── G5_DebugInfo_Asserts.cs         ← A16
-│   └── G5_SensitiveLogs_Asserts.cs     ← A28
+│   ├── G5_SSRF_Asserts.cs              ← A15, A15b, A15c
+│   ├── G5_DebugInfo_Asserts.cs         ← A16, A16b, A16c, A16d
+│   └── G5_SensitiveLogs_Asserts.cs     ← A28, A28b, A28c
 ├── Grupo6_Archivos/
-│   ├── G6_FileUpload_Asserts.cs         ← A14
-│   ├── G6_JWTQueryString_Asserts.cs     ← A17
-│   └── G6_ReDoS_Asserts.cs             ← A25
+│   ├── G6_FileUpload_Asserts.cs         ← A14, A14b, A14c
+│   ├── G6_JWTQueryString_Asserts.cs     ← A17, A17b
+│   └── G6_ReDoS_Asserts.cs             ← A25, A25b
 ├── Grupo7_Reportes/
-│   ├── G7_XXE_Asserts.cs               ← A22
-│   └── G7_OpenRedirect_Asserts.cs      ← A23
+│   ├── G7_XXE_Asserts.cs               ← A22, A22b, A22c
+│   └── G7_OpenRedirect_Asserts.cs      ← A23, A23b
 └── Grupo8_Webhooks/
-    ├── G8_WebhookHmac_Asserts.cs        ← A26
-    └── G8_WebhookSsrf_Asserts.cs        ← A27
+    ├── G8_WebhookHmac_Asserts.cs        ← A26, A26b, A26c
+    └── G8_WebhookSsrf_Asserts.cs        ← A27, A27b, A27c
 ```
+
+> **75 asserts totales** (45 IDs base + 30 variantes con sufijo `b`/`c`/`d`). Ver Tabla A.0 en la sección 6.
 
 ---
 
 ## 6. Tabla de asserts
+
+> **Tabla A.0 — verificada contra el código el 2026-09-23.** Contiene los **75 IDs** reales
+> (uno por método `[Fact]`/`[Theory]` con `[Trait("Assert", ...)]`). Los 45 IDs base
+> (A01–A28, B01–B11, C01–C06) tienen 30 variantes adicionales con sufijo `b`/`c`/`d` que
+> antes no figuraban en esta tabla ni en el conteo de la introducción.
 
 | Assert | Categoría | Oleada | OWASP | Descripción |
 |--------|-----------|--------|-------|-------------|
@@ -449,18 +462,34 @@ Inyector/
 | A04 | BLQ | 1 | API2:2023 | Endpoint sin token debe retornar 401 |
 | A05 | BLQ | 1 | API6:2023 | Mass Assignment — rol no vinculable |
 | A06 | BLQ | 1 | API5:2023 | BFLA — usuario no puede eliminar otros |
+| A06b | BLQ | 1 | API5:2023 | BFLA — usuario con rol 'user' no puede promover a otros a admin |
 | A07 | WRN | 2 | API2:2023 | Token JWT expirado debe rechazarse |
 | A08 | BLQ | 1 | API3:2023 | SQLi — OR payload no devuelve todos los registros |
+| A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 |
 | A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta |
+| A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) |
 | A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS |
 | A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse |
 | A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces |
+| A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework |
 | A13 | BLQ | 1 | API3:2023 | Path Traversal — descarga fuera del directorio base |
-| A14 | BLQ | 1 | API3:2023 | Upload sin restricción — ejecutables rechazados |
-| A15 | BLQ | 1 | API7:2023 | SSRF — URLs a rangos privados deben rechazarse |
+| A13b | BLQ | 1 | API3:2023 | Path Traversal — payloads codificados (paramétrico x3) no retornan 200 con contenido sensible |
+| A13c | BLQ | 1 | API3:2023 | Path Traversal — contenido de appsettings.json no expuesto |
+| A14 | BLQ | 1 | API3:2023 | Upload sin restricción — ejecutables rechazados (paramétrico x4) |
+| A14b | BLQ | 1 | API4:2023 | Upload — archivos > 5 MB rechazados con 413/400 |
+| A14c | BLQ | 1 | API3:2023 | Upload — nombre de archivo con traversal '../' rechazado o sanitizado |
+| A15 | BLQ | 1 | API7:2023 | SSRF — URLs a rangos privados deben rechazarse (paramétrico x4) |
+| A15b | BLQ | 1 | API7:2023 | SSRF — endpoint /diagnostics/ping debe requerir autenticación |
+| A15c | BLQ | 1 | API7:2023 | SSRF — respuesta no debe filtrar datos de red interna |
 | A16 | BLQ | 1 | API8:2023 | Debug endpoint no accesible sin autenticación |
+| A16b | WRN | 2 | API8:2023 | Debug endpoint no expone cadenas de conexión ni claves |
+| A16c | WRN | 2 | API8:2023 | Debug endpoint no lista variables de entorno del servidor |
+| A16d | WRN | 2 | API8:2023 | health-verbose no expone versión exacta de framework/runtime |
 | A17 | WRN | 2 | API2:2023 | JWT vía query string no debe autenticar |
+| A17b | WRN | 2 | API8:2023 | Authorization: Bearer sigue siendo el mecanismo válido de autenticación |
 | A18 | BLQ | 1 | API3:2023 | Respuestas no exponen campo 'password' |
+| A18b | BLQ | 1 | API3:2023 | GET /users/me no expone el campo 'password' |
+| A18c | BLQ | 1 | API3:2023 | Listado de usuarios no incluye contraseñas en texto plano |
 | A19 | BLQ | 1 | API1:2023 | IDOR — usuario no puede actualizar perfil ajeno |
 | A20 | BLQ | 1 | API1:2023 | Enumeración de IDs — máximo 1 hit propio |
 | A21 | BLQ | 1 | API1:2023 | IDOR — usuario no puede eliminar órdenes ajenas |
@@ -470,39 +499,53 @@ Inyector/
 | B04 | WRN | 2 | API8:2023 | Server no expone versión |
 | B05 | WRN | 2 | API8:2023 | X-Powered-By ausente |
 | B06 | WRN | 2 | API8:2023 | CORS sin wildcard * |
+| B06b | WRN | 2 | API8:2023 | CORS — no combina Allow-Origin: * con Allow-Credentials: true |
 | B07 | WRN | 2 | API8:2023 | Swagger no expuesto en producción |
 | B08 | WRN | 2 | API4:2023 | Paginación en colecciones |
 | B09 | WRN | 2 | API4:2023 | Rate limiting en auth |
 | B10 | WRN | 2 | API4:2023 | Payload gigante rechazado (límite de body) |
+| B10b | WRN | 2 | API4:2023 | Query strings excesivamente largos rechazados |
 | B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 |
+| B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login |
 | C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS |
 | C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 |
 | C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers |
 | C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 |
 | C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 |
 | C06 | INF | 3 | API8:2023 | /health público y retorna 200 |
-| A22 | BLQ | 1 | API3:2023 | XXE Injection — entidades externas rechazadas en POST /reports/parse |
+| A22 | BLQ | 1 | API3:2023 / API10:2023 | XXE Injection — entidades externas rechazadas en POST /reports/parse |
+| A22b | BLQ | 1 | API3:2023 / API10:2023 | XXE — respuesta no contiene contenido de archivos del sistema |
+| A22c | BLQ | 1 | API3:2023 / API10:2023 | XXE SSRF — parser no resuelve entidades a metadatos de nube |
 | A23 | BLQ | 1 | API8:2023 | Open Redirect — returnUrl externo debe rechazarse con 400 |
-| A24 | BLQ | 1 | API3:2023 | Header Injection — CRLF en query no inyecta cabeceras |
-| A25 | BLQ | 1 | API4:2023 | ReDoS — patrón catastrófico debe resolverse en < 2 s |
+| A23b | WRN | 2 | API8:2023 | Open Redirect — URLs relativas válidas no causan error 500 |
+| A24 | BLQ | 1 | API3:2023 | Header Injection — CRLF en query no inyecta cabeceras (paramétrico x4) |
+| A24b | WRN | 2 | API3:2023 | Búsqueda normal sin caracteres de control retorna 200/401 (no 500) |
+| A25 | BLQ | 1 | API4:2023 | ReDoS — patrón catastrófico debe resolverse en < 2 s (paramétrico x3) |
+| A25b | WRN | 2 | API4:2023 | ReDoS — patrón regex inválido retorna 400, no 500 ni se cuelga |
 | A26 | BLQ | 1 | API8:2023 | Webhook sin HMAC — petición sin X-Hub-Signature-256 rechazada |
-| A27 | BLQ | 1 | API7:2023 | SSRF webhook — callbackUrl a rangos privados rechazada |
+| A26b | BLQ | 1 | API8:2023 | Webhook — firma HMAC incorrecta rechazada con 401/403 |
+| A26c | WRN | 2 | API8:2023 | Webhook — respuesta no refleja el contenido del payload |
+| A27 | BLQ | 1 | API7:2023 | SSRF webhook — callbackUrl a rangos privados rechazada (paramétrico x6) |
+| A27b | BLQ | 1 | API7:2023 | SSRF webhook — respuesta no filtra datos de red interna |
+| A27c | WRN | 2 | API7:2023 | /webhooks/register debe requerir autenticación |
 | A28 | WRN | 2 | API8:2023 | Logs sensibles — payload del webhook no reflejado en respuesta |
+| A28b | WRN | 2 | API8:2023 | Respuesta de login no contiene la contraseña en texto claro |
+| A28c | WRN | 2 | API8:2023 | Contraseña enviada no aparece en el mensaje de error |
 
 ### Cobertura OWASP API Security Top 10 (2023)
 
 | Categoría OWASP | Nombre | Asserts que la cubren |
 |----------------|--------|----------------------|
 | API1:2023 | Broken Object Level Authorization | A01, A02, A19, A20, A21 |
-| API2:2023 | Broken Authentication | A03, A04, A07, A11, A17 |
-| API3:2023 | Broken Object Property Level Auth. | A05, A08, A09, A13, A14, A18, A22, A24 |
-| API4:2023 | Unrestricted Resource Consumption | A25, B08, B09, B10 |
-| API5:2023 | Broken Function Level Authorization | A06 |
+| API2:2023 | Broken Authentication | A03, A04, A07, A17 |
+| API3:2023 | Broken Object Property Level Auth. | A05, A08, A08b, A09, A09b, A13, A13b, A13c, A14, A14c, A18, A18b, A18c, A22, A22b, A22c, A24, A24b |
+| API4:2023 | Unrestricted Resource Consumption | A14b, A25, A25b, B08, B09, B10, B10b |
+| API5:2023 | Broken Function Level Authorization | A06, A06b |
 | API6:2023 | Unrestricted Access to Sensitive Flows | A05 |
-| API7:2023 | Server Side Request Forgery | A15, A27 |
-| API8:2023 | Security Misconfiguration | A10–A12, A16, A23, A26, A28, B01–B11, C01–C06 |
+| API7:2023 | Server Side Request Forgery | A15, A15b, A15c, A27, A27b, A27c |
+| API8:2023 | Security Misconfiguration | A10, A11, A12, A12b, A16–A17b, A23, A23b, A26, A26b, A26c, A28, A28b, A28c, B01–B11, B11b, C01–C06 |
 | API9:2023 | Improper Inventory Management | C04 |
-| API10:2023 | Unsafe Consumption of APIs (XXE) | A22 |
+| API10:2023 | Unsafe Consumption of APIs (XXE) | A22, A22b, A22c |
 
 ---
 
@@ -515,7 +558,7 @@ Inyector/
 | Cobertura OWASP API Top 10 | **10/10** | Todas las categorías del top 10 cubiertas |
 | Tiempo total de ejecución | A: ~14.5 s / B: ~800 ms | Por run (Escenario A: avg 14,495 ms; Escenario B: avg 772 ms) |
 | Asserts BLQ fallidos | = 0 (Escenario B) | Quality gate de deploy: ninguno puede fallar en la API parcheada |
-| Total asserts implementados | **55 IDs / 99 test cases** | Test cases extra por `[InlineData]` paramétricos |
+| Total asserts implementados | **75 IDs / 99 test cases** | 67 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 99 test cases; verificado contra el código el 2026-09-23 |
 
 ---
 
