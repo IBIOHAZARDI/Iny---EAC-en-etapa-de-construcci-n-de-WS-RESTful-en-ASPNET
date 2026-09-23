@@ -453,84 +453,94 @@ Inyector/
 > (uno por método `[Fact]`/`[Theory]` con `[Trait("Assert", ...)]`). Los 45 IDs base
 > (A01–A28, B01–B11, C01–C06) tienen 30 variantes adicionales con sufijo `b`/`c`/`d` que
 > antes no figuraban en esta tabla ni en el conteo de la introducción.
+>
+> Las columnas **A (pass/total)** y **B (pass/total)** se llenaron agregando, por el trait
+> `Assert`, los resultados de los 10 runs `Scenario{A,B}_Run{1..10}_2026-05-15.trx` en
+> [TestResults/](TestResults) (990 ejecuciones por escenario = 99 test cases × 10 runs). Ver
+> script [reports/Get-AssertCountsFromTrx.ps1](reports/Get-AssertCountsFromTrx.ps1) y datos
+> crudos en [reports/AssertCounts_TRX_2026-05-15.csv](reports/AssertCounts_TRX_2026-05-15.csv).
 
-| Assert | Categoría | Oleada | OWASP | Descripción |
-|--------|-----------|--------|-------|-------------|
-| A01 | BLQ | 1 | API1:2023 | BOLA — acceso a perfil de otro usuario |
-| A02 | BLQ | 1 | API1:2023 | BOLA — acceso a órdenes de otro usuario |
-| A03 | BLQ | 1 | API2:2023 | Brute Force — sin lockout en login |
-| A04 | BLQ | 1 | API2:2023 | Endpoint sin token debe retornar 401 |
-| A05 | BLQ | 1 | API6:2023 | Mass Assignment — rol no vinculable |
-| A06 | BLQ | 1 | API5:2023 | BFLA — usuario no puede eliminar otros |
-| A06b | BLQ | 1 | API5:2023 | BFLA — usuario con rol 'user' no puede promover a otros a admin |
-| A07 | WRN | 2 | API2:2023 | Token JWT expirado debe rechazarse |
-| A08 | BLQ | 1 | API3:2023 | SQLi — OR payload no devuelve todos los registros |
-| A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 |
-| A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta |
-| A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) |
-| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS |
-| A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse |
-| A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces |
-| A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework |
-| A13 | BLQ | 1 | API3:2023 | Path Traversal — descarga fuera del directorio base |
-| A13b | BLQ | 1 | API3:2023 | Path Traversal — payloads codificados (paramétrico x3) no retornan 200 con contenido sensible |
-| A13c | BLQ | 1 | API3:2023 | Path Traversal — contenido de appsettings.json no expuesto |
-| A14 | BLQ | 1 | API3:2023 | Upload sin restricción — ejecutables rechazados (paramétrico x4) |
-| A14b | BLQ | 1 | API4:2023 | Upload — archivos > 5 MB rechazados con 413/400 |
-| A14c | BLQ | 1 | API3:2023 | Upload — nombre de archivo con traversal '../' rechazado o sanitizado |
-| A15 | BLQ | 1 | API7:2023 | SSRF — URLs a rangos privados deben rechazarse (paramétrico x4) |
-| A15b | BLQ | 1 | API7:2023 | SSRF — endpoint /diagnostics/ping debe requerir autenticación |
-| A15c | BLQ | 1 | API7:2023 | SSRF — respuesta no debe filtrar datos de red interna |
-| A16 | BLQ | 1 | API8:2023 | Debug endpoint no accesible sin autenticación |
-| A16b | WRN | 2 | API8:2023 | Debug endpoint no expone cadenas de conexión ni claves |
-| A16c | WRN | 2 | API8:2023 | Debug endpoint no lista variables de entorno del servidor |
-| A16d | WRN | 2 | API8:2023 | health-verbose no expone versión exacta de framework/runtime |
-| A17 | WRN | 2 | API2:2023 | JWT vía query string no debe autenticar |
-| A17b | WRN | 2 | API8:2023 | Authorization: Bearer sigue siendo el mecanismo válido de autenticación |
-| A18 | BLQ | 1 | API3:2023 | Respuestas no exponen campo 'password' |
-| A18b | BLQ | 1 | API3:2023 | GET /users/me no expone el campo 'password' |
-| A18c | BLQ | 1 | API3:2023 | Listado de usuarios no incluye contraseñas en texto plano |
-| A19 | BLQ | 1 | API1:2023 | IDOR — usuario no puede actualizar perfil ajeno |
-| A20 | BLQ | 1 | API1:2023 | Enumeración de IDs — máximo 1 hit propio |
-| A21 | BLQ | 1 | API1:2023 | IDOR — usuario no puede eliminar órdenes ajenas |
-| B01 | WRN | 2 | API8:2023 | X-Content-Type-Options: nosniff presente |
-| B02 | WRN | 2 | API8:2023 | X-Frame-Options: DENY/SAMEORIGIN presente |
-| B03 | WRN | 2 | API8:2023 | Content-Security-Policy presente |
-| B04 | WRN | 2 | API8:2023 | Server no expone versión |
-| B05 | WRN | 2 | API8:2023 | X-Powered-By ausente |
-| B06 | WRN | 2 | API8:2023 | CORS sin wildcard * |
-| B06b | WRN | 2 | API8:2023 | CORS — no combina Allow-Origin: * con Allow-Credentials: true |
-| B07 | WRN | 2 | API8:2023 | Swagger no expuesto en producción |
-| B08 | WRN | 2 | API4:2023 | Paginación en colecciones |
-| B09 | WRN | 2 | API4:2023 | Rate limiting en auth |
-| B10 | WRN | 2 | API4:2023 | Payload gigante rechazado (límite de body) |
-| B10b | WRN | 2 | API4:2023 | Query strings excesivamente largos rechazados |
-| B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 |
-| B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login |
-| C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS |
-| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 |
-| C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers |
-| C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 |
-| C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 |
-| C06 | INF | 3 | API8:2023 | /health público y retorna 200 |
-| A22 | BLQ | 1 | API3:2023 / API10:2023 | XXE Injection — entidades externas rechazadas en POST /reports/parse |
-| A22b | BLQ | 1 | API3:2023 / API10:2023 | XXE — respuesta no contiene contenido de archivos del sistema |
-| A22c | BLQ | 1 | API3:2023 / API10:2023 | XXE SSRF — parser no resuelve entidades a metadatos de nube |
-| A23 | BLQ | 1 | API8:2023 | Open Redirect — returnUrl externo debe rechazarse con 400 |
-| A23b | WRN | 2 | API8:2023 | Open Redirect — URLs relativas válidas no causan error 500 |
-| A24 | BLQ | 1 | API3:2023 | Header Injection — CRLF en query no inyecta cabeceras (paramétrico x4) |
-| A24b | WRN | 2 | API3:2023 | Búsqueda normal sin caracteres de control retorna 200/401 (no 500) |
-| A25 | BLQ | 1 | API4:2023 | ReDoS — patrón catastrófico debe resolverse en < 2 s (paramétrico x3) |
-| A25b | WRN | 2 | API4:2023 | ReDoS — patrón regex inválido retorna 400, no 500 ni se cuelga |
-| A26 | BLQ | 1 | API8:2023 | Webhook sin HMAC — petición sin X-Hub-Signature-256 rechazada |
-| A26b | BLQ | 1 | API8:2023 | Webhook — firma HMAC incorrecta rechazada con 401/403 |
-| A26c | WRN | 2 | API8:2023 | Webhook — respuesta no refleja el contenido del payload |
-| A27 | BLQ | 1 | API7:2023 | SSRF webhook — callbackUrl a rangos privados rechazada (paramétrico x6) |
-| A27b | BLQ | 1 | API7:2023 | SSRF webhook — respuesta no filtra datos de red interna |
-| A27c | WRN | 2 | API7:2023 | /webhooks/register debe requerir autenticación |
-| A28 | WRN | 2 | API8:2023 | Logs sensibles — payload del webhook no reflejado en respuesta |
-| A28b | WRN | 2 | API8:2023 | Respuesta de login no contiene la contraseña en texto claro |
-| A28c | WRN | 2 | API8:2023 | Contraseña enviada no aparece en el mensaje de error |
+| Assert | Categoría | Oleada | OWASP | Descripción | A (pass/total) | B (pass/total) |
+|--------|-----------|--------|-------|-------------|:---------------:|:---------------:|
+| A01 | BLQ | 1 | API1:2023 | BOLA — acceso a perfil de otro usuario | 0/10 | 10/10 |
+| A02 | BLQ | 1 | API1:2023 | BOLA — acceso a órdenes de otro usuario | 0/10 | 10/10 |
+| A03 | BLQ | 1 | API2:2023 | Brute Force — sin lockout en login | 10/10 | 10/10 |
+| A04 | BLQ | 1 | API2:2023 | Endpoint sin token debe retornar 401 | 10/10 | 10/10 |
+| A05 | BLQ | 1 | API6:2023 | Mass Assignment — rol no vinculable | 0/10 | 10/10 |
+| A06 | BLQ | 1 | API5:2023 | BFLA — usuario no puede eliminar otros | 0/10 | 10/10 |
+| A06b | BLQ | 1 | API5:2023 | BFLA — usuario con rol 'user' no puede promover a otros a admin | 0/10 | 10/10 |
+| A07 | WRN | 2 | API2:2023 | Token JWT expirado debe rechazarse | 10/10 | 10/10 |
+| A08 | BLQ | 1 | API3:2023 | SQLi — OR payload no devuelve todos los registros | 0/10 | 10/10 |
+| A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 | 10/10 | 10/10 |
+| A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta | 0/10 | 10/10 |
+| A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) | 10/10 | 10/10 |
+| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | 0/10 | 0/10 |
+| A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse | 10/10 | 10/10 |
+| A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces | 10/10 | 10/10 |
+| A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework | 10/10 | 10/10 |
+| A13 | BLQ | 1 | API3:2023 | Path Traversal — descarga fuera del directorio base | 0/10 | 10/10 |
+| A13b | BLQ | 1 | API3:2023 | Path Traversal — payloads codificados (paramétrico x3) no retornan 200 con contenido sensible | 0/30 | 30/30 |
+| A13c | BLQ | 1 | API3:2023 | Path Traversal — contenido de appsettings.json no expuesto | 0/10 | 10/10 |
+| A14 | BLQ | 1 | API3:2023 | Upload sin restricción — ejecutables rechazados (paramétrico x4) | 0/40 | 40/40 |
+| A14b | BLQ | 1 | API4:2023 | Upload — archivos > 5 MB rechazados con 413/400 | 0/10 | 10/10 |
+| A14c | BLQ | 1 | API3:2023 | Upload — nombre de archivo con traversal '../' rechazado o sanitizado | 0/10 | 10/10 |
+| A15 | BLQ | 1 | API7:2023 | SSRF — URLs a rangos privados deben rechazarse (paramétrico x4) | 0/40 | 40/40 |
+| A15b | BLQ | 1 | API7:2023 | SSRF — endpoint /diagnostics/ping debe requerir autenticación | 0/10 | 10/10 |
+| A15c | BLQ | 1 | API7:2023 | SSRF — respuesta no debe filtrar datos de red interna | 10/10 | 10/10 |
+| A16 | BLQ | 1 | API8:2023 | Debug endpoint no accesible sin autenticación | 0/10 | 10/10 |
+| A16b | WRN | 2 | API8:2023 | Debug endpoint no expone cadenas de conexión ni claves | 0/10 | 10/10 |
+| A16c | WRN | 2 | API8:2023 | Debug endpoint no lista variables de entorno del servidor | 0/10 | 10/10 |
+| A16d | WRN | 2 | API8:2023 | health-verbose no expone versión exacta de framework/runtime | 0/10 | 10/10 |
+| A17 | WRN | 2 | API2:2023 | JWT vía query string no debe autenticar | 0/10 | 10/10 |
+| A17b | WRN | 2 | API8:2023 | Authorization: Bearer sigue siendo el mecanismo válido de autenticación | 0/10 | 10/10 |
+| A18 | BLQ | 1 | API3:2023 | Respuestas no exponen campo 'password' | 0/10 | 10/10 |
+| A18b | BLQ | 1 | API3:2023 | GET /users/me no expone el campo 'password' | 0/10 | 10/10 |
+| A18c | BLQ | 1 | API3:2023 | Listado de usuarios no incluye contraseñas en texto plano | 0/10 | 10/10 |
+| A19 | BLQ | 1 | API1:2023 | IDOR — usuario no puede actualizar perfil ajeno | 0/10 | 10/10 |
+| A20 | BLQ | 1 | API1:2023 | Enumeración de IDs — máximo 1 hit propio | 0/10 | 10/10 |
+| A21 | BLQ | 1 | API1:2023 | IDOR — usuario no puede eliminar órdenes ajenas | 0/10 | 10/10 |
+| B01 | WRN | 2 | API8:2023 | X-Content-Type-Options: nosniff presente | 0/10 | 10/10 |
+| B02 | WRN | 2 | API8:2023 | X-Frame-Options: DENY/SAMEORIGIN presente | 0/10 | 10/10 |
+| B03 | WRN | 2 | API8:2023 | Content-Security-Policy presente | 0/10 | 10/10 |
+| B04 | WRN | 2 | API8:2023 | Server no expone versión | 0/10 | 10/10 |
+| B05 | WRN | 2 | API8:2023 | X-Powered-By ausente | 0/10 | 10/10 |
+| B06 | WRN | 2 | API8:2023 | CORS sin wildcard * | 0/10 | 10/10 |
+| B06b | WRN | 2 | API8:2023 | CORS — no combina Allow-Origin: * con Allow-Credentials: true | 10/10 | 10/10 |
+| B07 | WRN | 2 | API8:2023 | Swagger no expuesto en producción | 0/10 | 10/10 |
+| B08 | WRN | 2 | API4:2023 | Paginación en colecciones | 0/10 | 0/10 |
+| B09 | WRN | 2 | API4:2023 | Rate limiting en auth | 0/10 | 0/10 |
+| B10 | WRN | 2 | API4:2023 | Payload gigante rechazado (límite de body) | 0/10 | 10/10 |
+| B10b | WRN | 2 | API4:2023 | Query strings excesivamente largos rechazados | 10/10 | 10/10 |
+| B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 | 10/10 | 10/10 |
+| B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login | 10/10 | 10/10 |
+| C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS | 10/10 | 10/10 |
+| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | 0/10 | 0/10 |
+| C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers | 10/10 | 10/10 |
+| C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 | 0/10 | 10/10 |
+| C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 (paramétrico x4) | 40/40 | 40/40 |
+| C06 | INF | 3 | API8:2023 | /health público y retorna 200 | 10/10 | 10/10 |
+| A22 | BLQ | 1 | API3:2023 / API10:2023 | XXE Injection — entidades externas rechazadas en POST /reports/parse | 0/10 | 10/10 |
+| A22b | BLQ | 1 | API3:2023 / API10:2023 | XXE — respuesta no contiene contenido de archivos del sistema | 0/10 | 10/10 |
+| A22c | BLQ | 1 | API3:2023 / API10:2023 | XXE SSRF — parser no resuelve entidades a metadatos de nube | 0/10 | 10/10 |
+| A23 | BLQ | 1 | API8:2023 | Open Redirect — returnUrl externo debe rechazarse con 400 (paramétrico x4) | 0/40 | 40/40 |
+| A23b | WRN | 2 | API8:2023 | Open Redirect — URLs relativas válidas no causan error 500 | 10/10 | 10/10 |
+| A24 | BLQ | 1 | API3:2023 | Header Injection — CRLF en query no inyecta cabeceras (paramétrico x4) | 40/40 | 40/40 |
+| A24b | WRN | 2 | API3:2023 | Búsqueda normal sin caracteres de control retorna 200/401 (no 500) | 10/10 | 10/10 |
+| A25 | BLQ | 1 | API4:2023 | ReDoS — patrón catastrófico debe resolverse en < 2 s (paramétrico x3) | 30/30 | 30/30 |
+| A25b | WRN | 2 | API4:2023 | ReDoS — patrón regex inválido retorna 400, no 500 ni se cuelga | 10/10 | 10/10 |
+| A26 | BLQ | 1 | API8:2023 | Webhook sin HMAC — petición sin X-Hub-Signature-256 rechazada | 0/10 | 10/10 |
+| A26b | BLQ | 1 | API8:2023 | Webhook — firma HMAC incorrecta rechazada con 401/403 | 0/10 | 10/10 |
+| A26c | WRN | 2 | API8:2023 | Webhook — respuesta no refleja el contenido del payload | 10/10 | 10/10 |
+| A27 | BLQ | 1 | API7:2023 | SSRF webhook — callbackUrl a rangos privados rechazada (paramétrico x6) | 0/60 | 60/60 |
+| A27b | BLQ | 1 | API7:2023 | SSRF webhook — respuesta no filtra datos de red interna | 0/10 | 10/10 |
+| A27c | WRN | 2 | API7:2023 | /webhooks/register debe requerir autenticación | 10/10 | 10/10 |
+| A28 | WRN | 2 | API8:2023 | Logs sensibles — payload del webhook no reflejado en respuesta | 10/10 | 10/10 |
+| A28b | WRN | 2 | API8:2023 | Respuesta de login no contiene la contraseña en texto claro | 10/10 | 10/10 |
+| A28c | WRN | 2 | API8:2023 | Contraseña enviada no aparece en el mensaje de error | 10/10 | 10/10 |
+
+> **Hallazgo:** en el Escenario B (parcheado) los IDs A10, B08, B09 y C02 siguen fallando
+> 10/10 — indica que esas correcciones (HTTPS redirect, paginación, rate limiting, TLS 1.2)
+> no están aplicadas en `VulnerableApi_Patched` a la fecha del run 2026-05-15.
 
 ### Cobertura OWASP API Security Top 10 (2023)
 
