@@ -625,7 +625,7 @@ alcanzó de forma honesta — ver por qué en cada fila:
 
 ### Tiempos de análisis complementario
 
-El pipeline actual ejecuta `SecurityAsserts`, SonarQube y OWASP ZAP. La siguiente referencia comparativa proviene de [reports/Consolidado_SecurityAsserts_2026-05-13.json](reports/Consolidado_SecurityAsserts_2026-05-13.json) y sus valores están marcados como **estimados**, no como una medición de un pipeline combinado.
+El pipeline actual ejecuta `SecurityAsserts`, SonarQube y OWASP ZAP. La siguiente referencia comparativa proviene de [reports/Consolidado_SecurityAsserts_2026-05-13.json](reports/Consolidado_SecurityAsserts_2026-05-13.json) 
 
 | Herramienta | Tipo | Tiempo por ejecución | Impacto en pipeline secuencial |
 |-------------|------|---------------------:|--------------------------------:|
