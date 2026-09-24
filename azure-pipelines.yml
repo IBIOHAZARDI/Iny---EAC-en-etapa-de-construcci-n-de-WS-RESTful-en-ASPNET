@@ -1,0 +1,148 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  buildConfiguration: Debug
+  testProject: SecurityAsserts/SecurityAsserts.csproj
+  testResultsDir: $(Build.SourcesDirectory)\TestResults\pipeline
+  sonarQubeServiceConnection: SonarQube
+  sonarProjectKey: Inyector-SecurityAsserts
+  sonarProjectName: Inyector SecurityAsserts
+  vulnerableApiUrl: http://localhost:5000
+  patchedApiUrl: http://localhost:5002
+  zapTargetUrl: http://host.docker.internal:5000
+  zapImage: zaproxy/zap-stable:latest
+  zapFailOnAlert: false
+
+pool:
+  name: Default
+
+stages:
+  - stage: SecurityAnalysis
+    displayName: Analisis de seguridad
+    jobs:
+      - job: Analyze
+        displayName: SonarQube, SecurityAsserts y OWASP ZAP
+        steps:
+          - task: UseDotNet@2
+            displayName: Usar .NET SDK 8.0.319
+            inputs:
+              packageType: sdk
+              version: 8.0.319
+
+          - task: SonarQubePrepare@7
+            displayName: Preparar analisis SonarQube
+            inputs:
+              SonarQube: $(sonarQubeServiceConnection)
+              scannerMode: MSBuild
+              projectKey: $(sonarProjectKey)
+              projectName: $(sonarProjectName)
+              extraProperties: |
+                sonar.exclusions=**/bin/**,**/obj/**,**/TestResults/**
+
+          - task: DotNetCoreCLI@2
+            displayName: Restaurar dependencias
+            inputs:
+              command: restore
+              projects: $(testProject)
+
+          - task: DotNetCoreCLI@2
+            displayName: Compilar SecurityAsserts
+            inputs:
+              command: build
+              projects: $(testProject)
+              arguments: --configuration $(buildConfiguration) --no-restore
+
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              $targets = @(
+                @{ Name = 'VulnerableApi'; Url = '$(vulnerableApiUrl)' },
+                @{ Name = 'VulnerableApi_Patched'; Url = '$(patchedApiUrl)' }
+              )
+
+              foreach ($target in $targets) {
+                try {
+                  $response = Invoke-WebRequest "$($target.Url)/health" -UseBasicParsing -TimeoutSec 10
+                  if ($response.StatusCode -ne 200) {
+                    throw "HTTP $($response.StatusCode)"
+                  }
+                } catch {
+                  throw "$($target.Name) no esta disponible en $($target.Url): $($_.Exception.Message)"
+                }
+              }
+            displayName: Verificar APIs de escenarios A y B
+
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              New-Item -ItemType Directory -Force -Path '$(testResultsDir)' | Out-Null
+
+              $scenarios = @(
+                @{ Name = 'ScenarioA'; Url = '$(vulnerableApiUrl)' },
+                @{ Name = 'ScenarioB'; Url = '$(patchedApiUrl)' }
+              )
+
+              foreach ($scenario in $scenarios) {
+                $trxFile = "$($scenario.Name)_$(Build.BuildId).trx"
+                & dotnet test '$(testProject)' --no-build --configuration '$(buildConfiguration)' `
+                  --collect 'XPlat Code Coverage' `
+                  --logger "trx;LogFileName=$trxFile" `
+                  --results-directory '$(testResultsDir)' `
+                  -- RunConfiguration.EnvironmentVariables.TEST_API_URL="$($scenario.Url)"
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Warning "$($scenario.Name) detecto controles de seguridad no satisfechos (exit=$LASTEXITCODE)."
+                }
+              }
+            displayName: Ejecutar SecurityAsserts en escenarios A y B
+            continueOnError: true
+
+          - task: SonarQubeAnalyze@7
+            displayName: Analizar codigo con SonarQube
+
+          - task: SonarQubePublish@7
+            displayName: Publicar quality gate de SonarQube
+            inputs:
+              pollingTimeoutSec: '300'
+
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+              $zapOutput = Join-Path '$(Build.SourcesDirectory)' 'zap-results'
+              New-Item -ItemType Directory -Force -Path $zapOutput | Out-Null
+
+              docker pull '$(zapImage)'
+              docker run --rm `
+                -v "$(Build.SourcesDirectory):/zap/wrk/:rw" `
+                '$(zapImage)' `
+                zap-baseline.py -t '$(zapTargetUrl)' -r zap-report.html -J zap-report.json -I
+              $zapExitCode = $LASTEXITCODE
+
+              if ($zapExitCode -ne 0) {
+                Write-Warning "OWASP ZAP finalizo con codigo $zapExitCode. Revise zap-results/zap-report.html."
+                if ('$(zapFailOnAlert)' -eq 'true') {
+                  exit $zapExitCode
+                }
+              }
+            displayName: Analizar VulnerableApi con OWASP ZAP
+
+          - task: PublishTestResults@2
+            displayName: Publicar resultados TRX
+            condition: always()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: $(testResultsDir)\*.trx
+              failTaskOnFailedTests: false
+              testRunTitle: SecurityAsserts
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar cobertura y reporte ZAP
+            condition: always()
+            inputs:
+              targetPath: $(Build.SourcesDirectory)
+              artifact: security-analysis
+              publishLocation: pipeline

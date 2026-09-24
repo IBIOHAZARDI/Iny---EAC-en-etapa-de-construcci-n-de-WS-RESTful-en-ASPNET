@@ -22,11 +22,12 @@ Proyecto xUnit con **77 asserts** (101 test cases paramétricos) organizados en 
 | **A — Vulnerable** | VulnerableApi | 5000 | Confirmar que las 28 vulnerabilidades son detectables |
 | **B — Parcheada** | VulnerableApi_Patched | 5002 | Confirmar que las correcciones superan los controles |
 
-Se integra como **Etapas 3A y 3B** del pipeline de Azure DevOps. Quality gate: Escenario A alerta si el promedio supera 99/99 (anomalía); Escenario B falla si el promedio cae por debajo de 95/99 (umbral del 95%).
+El pipeline de Azure DevOps ([azure-pipelines.yml](azure-pipelines.yml)) integra SonarQube, los escenarios A y B de `SecurityAsserts` y OWASP ZAP contra la API vulnerable. Quality gate: SonarQube publica su quality gate; ZAP publica el reporte y puede bloquear el pipeline mediante `zapFailOnAlert=true`; los resultados TRX quedan publicados aun cuando los escenarios vulnerables detecten fallos esperados.
 
 > **Prerrequisitos:**
 > - La API objetivo debe estar corriendo en su puerto antes de ejecutar los asserts.
 > - **Compilar y ejecutar siempre desde la carpeta `Inyector/`** — `Inyector/global.json` fija el SDK a `8.0.319` y evita errores `CS1744` con SDK 9.
+> - El agente self-hosted `Default` debe tener Docker, una conexión de servicio de SonarQube llamada `SonarQube` y acceso a las APIs en los puertos `5000` y `5002`.
 
 ---
 
@@ -614,13 +615,25 @@ alcanzó de forma honesta — ver por qué en cada fila:
 
 | Métrica | Umbral | Descripción |
 |---------|--------|-------------|
-| TVP — Tasa Verdaderos Positivos | ≥ 80% | % de vulnerabilidades reales detectadas. **Resultado Escenario A: ~32% (31.7/99)** promedio de 3 runs; 100% de las 28 vulnerabilidades identificadas como categoría OWASP |
+| TVP — Tasa Verdaderos Positivos | ≥ 80% | % de vulnerabilidades reales detectadas. **Referencia histórica (2026-05-13): ~32% (31.7/99)** en 3 runs; la ejecución vigente del pipeline usa 10 runs por escenario. 100% de las 28 vulnerabilidades identificadas como categoría OWASP |
 | TFP — Tasa Falsos Positivos | ≤ 15% | % de alertas erróneas en API sin vulnerabilidades. **Resultado Escenario B: 4/99 = 4%** (4 fallos de entorno documentados, 2026-05-13); confirmado el 2026-09-23 con 10 runs reales: 40/1010 test cases = 4.0% (4 IDs constantes: `A10`, `B08`, `B09`, `C02`) |
 | Cobertura OWASP API Top 10 | **10/10** | Todas las categorías del top 10 cubiertas |
 | Tiempo total de ejecución | A: ~14.5 s / B: ~800 ms | Por run (Escenario A: avg 14,495 ms; Escenario B: avg 772 ms) |
 | Asserts BLQ fallidos | = 0 (Escenario B) | Quality gate de deploy: ninguno puede fallar en la API parcheada |
 | Total asserts implementados | **77 IDs / 101 test cases** | 69 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 101 test cases; A12c y A07b agregados el 2026-09-23 |
 | Cobertura vulnerabilidades ground-truth | **24/28 (85.7%)** | Subió desde 78.6% al corregir G2-V3 (`A12c`) y G1-V4 (`A07b`); ver sección 6 |
+
+### Tiempos de análisis complementario
+
+El pipeline actual ejecuta `SecurityAsserts`, SonarQube y OWASP ZAP. La siguiente referencia comparativa proviene de [reports/Consolidado_SecurityAsserts_2026-05-13.json](reports/Consolidado_SecurityAsserts_2026-05-13.json) y sus valores están marcados como **estimados**, no como una medición de un pipeline combinado.
+
+| Herramienta | Tipo | Tiempo por ejecución | Impacto en pipeline secuencial |
+|-------------|------|---------------------:|--------------------------------:|
+| OWASP ZAP | DAST | 720 s (12 min) | +12 min |
+| SonarQube | SAST | 240 s (4 min) | +4 min |
+| **ZAP + SonarQube** | — | **960 s (16 min)** | **+16 min** |
+
+> El total de 16 minutos suma únicamente las dos etapas de análisis. No incluye restauración, compilación, arranque de la API, publicación de resultados ni tiempos de cola del agente.
 
 ---
 
@@ -700,7 +713,7 @@ Los TRX se publican mediante `PublishTestResults@2` con `testResultsFiles: '$(te
 ```powershell
 # El directorio de resultados existe y contiene los TRX
 Get-ChildItem "$(Build.ArtifactStagingDirectory)/test-results" -Filter "Scenario*.trx"
-# Debe mostrar 6 archivos (A_Run1, A_Run2, A_Run3, B_Run1, B_Run2, B_Run3)
+# Debe mostrar 20 archivos (A_Run1..A_Run10 y B_Run1..B_Run10)
 ```
 
 Si los TRX están en otra ruta, actualizar `testResultsDir` en las variables del pipeline.
@@ -709,9 +722,9 @@ Si los TRX están en otra ruta, actualizar `testResultsDir` en las variables del
 
 ## 9. Ejecución multi-run (replicando el pipeline)
 
-El pipeline ejecuta **3 runs independientes** por escenario para calcular promedios estadísticos. Para replicarlo localmente:
+El pipeline ejecuta **10 runs independientes** por escenario para calcular promedios estadísticos. Para replicarlo localmente:
 
-### Multi-run Escenario A (3 runs con DB limpia entre cada uno)
+### Multi-run Escenario A (10 runs con DB limpia entre cada uno)
 
 ```powershell
 Set-Location "C:\Trabajo\Universidad\Inyector"
@@ -721,7 +734,7 @@ $resultsDir = "C:\Trabajo\Universidad\Resultados\TestResults"
 $fecha      = Get-Date -Format "yyyy-MM-dd"
 $allResults = @()
 
-for ($run = 1; $run -le 3; $run++) {
+for ($run = 1; $run -le 10; $run++) {
     # Limpiar puerto, DB y reiniciar API
     Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue |
         ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
@@ -763,7 +776,7 @@ $avgD = [math]::Round(($allResults.DurMs  | Measure-Object -Average).Average)
 Write-Host "Promedio A: $avgP/99 en ${avgD}ms"
 ```
 
-### Multi-run Escenario B (3 runs, con DB reiniciada entre cada uno)
+### Multi-run Escenario B (10 runs, con DB reiniciada entre cada uno)
 
 > **Corrección (2026-09-23):** la versión anterior de este script arrancaba
 > `VulnerableApi_Patched` una sola vez bajo el supuesto de que "los asserts B son
@@ -782,7 +795,7 @@ $resultsDir  = "C:\Trabajo\Universidad\Resultados\TestResults"
 $fecha       = Get-Date -Format "yyyy-MM-dd"
 $allResults  = @()
 
-for ($run = 1; $run -le 3; $run++) {
+for ($run = 1; $run -le 10; $run++) {
     # Reiniciar API y limpiar BD antes de cada run (igual que Escenario A)
     Get-NetTCPConnection -LocalPort 5002 -State Listen -ErrorAction SilentlyContinue |
         ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
@@ -820,7 +833,7 @@ $qg   = if ($avgP -ge 95) { "APROBADO" } else { "REVISAR" }
 Write-Host "Promedio B: $avgP/99 en ${avgD}ms — $qg"
 ```
 
-### Resultados de referencia (2026-05-13, 3 runs cada escenario)
+### Resultados históricos de referencia (2026-05-13, 3 runs cada escenario)
 
 | Escenario | Run 1 | Run 2 | Run 3 | Promedio | Duración prom. | Ratio |
 |-----------|-------|-------|-------|----------|---------------|---------|
@@ -828,3 +841,12 @@ Write-Host "Promedio B: $avgP/99 en ${avgD}ms — $qg"
 | B — Parcheada | 95/99 | 95/99 | 95/99 | **95.0/99** | 772 ms | 18.8× más rápido |
 
 > **Anomalía Run 1 Escenario A (25 vs 35):** efecto warm-up — la API no terminó de inicializar SQLite al comenzar la primera ejecución. Los runs 2 y 3 son representativos. En el pipeline se documentan como `stableRuns` en `scenarioA-stats.json`.
+
+### Resultados históricos de referencia (2026-09-23, 10 runs por escenario)
+
+Ejecución reproducida con los scripts [reports/Run-ScenarioA-10x.ps1](reports/Run-ScenarioA-10x.ps1) y [reports/Run-ScenarioB-10x.ps1](reports/Run-ScenarioB-10x.ps1). En cada corrida se reinició la API y se limpió su base de datos para evitar contaminación de estado. Los 20 TRX fuente están en [TestResults/](TestResults). La variación se calculó como mínimo–máximo, desviación estándar muestral y coeficiente de variación ($CV = 100 \times s / \bar{x}$).
+
+| Escenario | Corridas | Resultado por corrida | Total acumulado | Duración prom. | Variación de duración | Ratio |
+|-----------|:--------:|:---------------------:|:---------------:|---------------:|-----------------------|------:|
+| A — Vulnerable | 10 | 45/101 | 450/1010 | 19,652.23 ms | 19,608.06–19,698.45 ms; DE 23.53 ms; CV 0.12% | — |
+| B — Parcheada | 10 | 97/101 | 970/1010 | 589.12 ms | 565.72–611.53 ms; DE 15.90 ms; CV 2.70% | 33.4× más rápido |

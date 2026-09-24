@@ -13,7 +13,54 @@
 
 ---
 
-## Resultado Global
+## ⚡ Actualización — 2026-09-23
+
+> El resto de este documento describe la ejecución original del **2026-05-13** (55 asserts,
+> ground-truth de 14 vulnerabilidades) y se conserva sin alterar como registro histórico.
+> Esta sección resume el estado verificado a la fecha actual. Detalle completo, tabla de
+> asserts assert-por-assert y metodología en [README.md, sección 6](README.md#6-tabla-de-asserts).
+
+| Métrica | 2026-05-13 (original) | 2026-09-23 (actual) |
+|---------|:---:|:---:|
+| Asserts implementados | 55 | **77** (+22) |
+| Test cases (con paramétricos) | 99 | **101** |
+| Vulnerabilidades ground-truth (`VulnerableApi`) | 14 | **28** |
+| Ground-truth detectadas | 14/14 (100 %) | **24/28 (85.7 %)** |
+| Escenario A — pasados | 13/55 (23.6 %) | **13/77** asserts distintos pasan (mismo patrón, base ampliada) |
+| Escenario B — tasa de paso (test cases) | 95/99 (96.0 %) | **970/1010 (96.0 %)** — 10 runs reales, **idéntica** a la línea base |
+| Escenario B — IDs que siguen fallando | A10, B08, B09, C02 | **A10, B08, B09, C02** (los mismos 4, sin regresión) |
+
+**Consistencia confirmada:** al re-ejecutar 10 runs reales por escenario el 2026-09-23 (ver
+[TestResults/](TestResults) y [reports/AssertCounts_TRX_2026-09-23.csv](reports/AssertCounts_TRX_2026-09-23.csv)),
+Escenario B reproduce **exactamente el mismo 96.0 % y los mismos 4 IDs fallidos** que la
+línea base del 2026-05-13, pese a que el pool de asserts creció de 55 a 77. Esto valida que
+las correcciones de `VulnerableApi_Patched` siguen siendo efectivas frente a los asserts
+nuevos y que no hay regresiones.
+
+**Cambios desde el 2026-05-13:**
+- Se agregaron 22 asserts con sufijo `b`/`c`/`d` que antes no estaban documentados (p. ej.
+  `A06b`, `A18c`, `A16d`), más dos nuevos: `A12c` (fuerza una `SqliteException` sin manejar
+  para confirmar G2-V3, `DeveloperExceptionPage`) y `A07b` (re-firma un JWT real con `exp`
+  pasado usando la clave HMAC conocida del servidor, para confirmar G1-V4 sin depender de un
+  token pre-computado). Ambos fallan 0/10 contra `VulnerableApi` y pasan 10/10 contra
+  `VulnerableApi_Patched`.
+- Se corrigió un bug de entorno real: la clave HMAC hardcodeada (`"weak-key"`, 8 bytes) dejó
+  de ser aceptada por la versión instalada de `Microsoft.IdentityModel.Tokens` (exige > 256
+  bits) y el login fallaba con 500 para **todos** los asserts autenticados. Se amplió a 39
+  bytes, hardcodeada y predecible, preservando la vulnerabilidad de diseño.
+- Se investigaron las 6 vulnerabilidades ground-truth no detectadas (`G1-V4`, `G2-V3`,
+  `G2-V8`, `G3-V4`, `G5-V2`, `G6-V3`): 2 se corrigieron (arriba), 2 se confirmaron mitigadas a
+  nivel de runtime .NET 8/Kestrel (CRLF injection, ReDoS clásico — no forzables sin generar
+  falsos positivos), y 2 quedan pendientes por requerir acceso a logs de archivo del servidor
+  (`G2-V8`, `G5-V2`), fuera del alcance de un test suite HTTP-only sin autorización adicional
+  para modificar `VulnerableApi`.
+- Se corrigió el script de multi-run de Escenario B (antes reutilizaba la misma BD entre los
+  10 runs, contaminando asserts con estado como BOLA/IDOR/Mass Assignment); ahora reinicia
+  proceso y BD entre cada run, igual que Escenario A.
+
+---
+
+## Resultado Global (2026-05-13, sin modificar)
 
 | Métrica | Valor |
 |---------|-------|
