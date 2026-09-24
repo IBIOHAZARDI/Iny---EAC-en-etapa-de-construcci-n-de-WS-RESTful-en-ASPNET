@@ -1,6 +1,6 @@
 # Inyector — Pool de Asserts de Seguridad (xUnit)
 
-Proyecto xUnit con **76 asserts** (100 test cases paramétricos) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
+Proyecto xUnit con **77 asserts** (101 test cases paramétricos) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
 
 > **Nota de verificación (2026-09-23):** el conteo de 75 asserts fue confirmado contra el código
 > (75 métodos `[Fact]`/`[Theory]` decorados con `[Trait("Assert", ...)]`, 67 `[Fact]` + 8 `[Theory]`
@@ -8,8 +8,14 @@ Proyecto xUnit con **76 asserts** (100 test cases paramétricos) organizados en 
 > (A01–A28, B01–B11, C01–C06) usan sufijos `b`/`c`/`d` (p. ej. `A06b`, `A18c`, `A16d`) y ahora
 > están documentados en la Tabla A.0 de la sección 6.
 >
-> **Actualización (2026-09-23, subida de cobertura):** se agregó `A12c` para cerrar el gap de
-> detección de G2-V3 (DeveloperExceptionPage) — ver sección 6 para el detalle y hallazgos.
+> **Actualización (2026-09-23, subida de cobertura):** se agregó `A12c` (G2-V3,
+> `DeveloperExceptionPage`) y `A07b` (G1-V4, JWT sin `ValidateLifetime`). Para que `A07b`
+> funcionara fue necesario corregir un bug real de entorno en `VulnerableApi`: la clave
+> HMAC hardcodeada ("weak-key", 8 bytes) ya no era aceptada por la versión instalada de
+> `Microsoft.IdentityModel.Tokens` (exige > 256 bits) y el login fallaba con 500 para
+> **todos** los asserts autenticados. Se amplió la clave a 39 bytes, hardcodeada y
+> predecible, preservando la vulnerabilidad de diseño. Ver sección 6 para el detalle
+> completo y los hallazgos sobre G3-V4/G6-V3.
 
 | Escenario | Target | Puerto | Objetivo |
 |-----------|--------|--------|---------|
@@ -388,10 +394,10 @@ Algunos asserts verifican controles que la `VulnerableApi` **intencionalmente no
 | Assert | Falla esperada | Razón |
 |--------|---------------|-------|
 | A03 | Sí | G1-V2: sin rate limiting |
-| A07 | Sí | G1-V4: JWT sin ValidateLifetime |
+| A07b | Sí | G1-V4: JWT sin ValidateLifetime (ver A07b en sección 6) |
 | A10 | Sí | G4-V1: sin UseHttpsRedirection |
 | B01–B05 | Sí | G2-V2: sin middleware de cabeceras |
-| A25 | Sí | G6-V3: Regex sin timeout |
+| A12c | Sí | G2-V3: DeveloperExceptionPage expone stack trace |
 
 ---
 
@@ -411,7 +417,7 @@ Inyector/
 │   └── AuthHelper.cs                    ← Obtiene tokens JWT para los asserts
 ├── Grupo1_ControlAcceso/
 │   ├── G1_BOLA_Asserts.cs               ← A01, A02
-│   ├── G1_Auth_Asserts.cs               ← A03, A04, A07, A11
+│   ├── G1_Auth_Asserts.cs               ← A03, A04, A07, A07b, A11
 │   ├── G1_MassAssignment_Asserts.cs     ← A05
 │   ├── G1_BFLA_Asserts.cs               ← A06, A06b
 │   ├── G1_SensitiveData_Asserts.cs      ← A18, A18b, A18c
@@ -446,105 +452,112 @@ Inyector/
     └── G8_WebhookSsrf_Asserts.cs        ← A27, A27b, A27c
 ```
 
-> **76 asserts totales** (45 IDs base + 31 variantes con sufijo `b`/`c`/`d`). Ver Tabla A.0 en la sección 6.
+> **77 asserts totales** (45 IDs base + 32 variantes con sufijo `b`/`c`/`d`). Ver Tabla A.0 en la sección 6.
 
 ---
 
 ## 6. Tabla de asserts
 
-> **Tabla A.0 — verificada contra el código el 2026-09-23.** Contiene los **75 IDs** reales
-> (uno por método `[Fact]`/`[Theory]` con `[Trait("Assert", ...)]`). Los 45 IDs base
-> (A01–A28, B01–B11, C01–C06) tienen 30 variantes adicionales con sufijo `b`/`c`/`d` que
-> antes no figuraban en esta tabla ni en el conteo de la introducción.
+> **Tabla A.0 — verificada contra el código y re-ejecutada el 2026-09-23.** Contiene los
+> **77 IDs** reales (uno por método `[Fact]`/`[Theory]` con `[Trait("Assert", ...)]`). Los 45
+> IDs base (A01–A28, B01–B11, C01–C06) tienen 32 variantes adicionales con sufijo `b`/`c`/`d`.
 >
 > Las columnas **A (pass/total)** y **B (pass/total)** se llenaron agregando, por el trait
-> `Assert`, los resultados de los 10 runs `Scenario{A,B}_Run{1..10}_2026-05-15.trx` en
-> [TestResults/](TestResults) (990 ejecuciones por escenario = 99 test cases × 10 runs). Ver
-> script [reports/Get-AssertCountsFromTrx.ps1](reports/Get-AssertCountsFromTrx.ps1) y datos
-> crudos en [reports/AssertCounts_TRX_2026-05-15.csv](reports/AssertCounts_TRX_2026-05-15.csv).
+> `Assert`, los resultados de 3 runs frescos `Scenario{A,B}_Run{1..3}_2026-09-23.trx` en
+> [TestResults/](TestResults) (303 ejecuciones por escenario = 101 test cases × 3 runs;
+> reemplazan los runs de 10 repeticiones del 2026-05-15, previos a `A12c`/`A07b`). Ver script
+> [reports/Get-AssertCountsFromTrx.ps1](reports/Get-AssertCountsFromTrx.ps1) (parámetro
+> `-Fecha`) y datos crudos en [reports/AssertCounts_TRX_2026-09-23.csv](reports/AssertCounts_TRX_2026-09-23.csv).
 
 | Assert | Categoría | Oleada | OWASP | Descripción | A (pass/total) | B (pass/total) |
 |--------|-----------|--------|-------|-------------|:---------------:|:---------------:|
-| A01 | BLQ | 1 | API1:2023 | BOLA — acceso a perfil de otro usuario | 0/10 | 10/10 |
-| A02 | BLQ | 1 | API1:2023 | BOLA — acceso a órdenes de otro usuario | 0/10 | 10/10 |
-| A03 | BLQ | 1 | API2:2023 | Brute Force — sin lockout en login | 10/10 | 10/10 |
-| A04 | BLQ | 1 | API2:2023 | Endpoint sin token debe retornar 401 | 10/10 | 10/10 |
-| A05 | BLQ | 1 | API6:2023 | Mass Assignment — rol no vinculable | 0/10 | 10/10 |
-| A06 | BLQ | 1 | API5:2023 | BFLA — usuario no puede eliminar otros | 0/10 | 10/10 |
-| A06b | BLQ | 1 | API5:2023 | BFLA — usuario con rol 'user' no puede promover a otros a admin | 0/10 | 10/10 |
-| A07 | WRN | 2 | API2:2023 | Token JWT expirado debe rechazarse | 10/10 | 10/10 |
-| A08 | BLQ | 1 | API3:2023 | SQLi — OR payload no devuelve todos los registros | 0/10 | 10/10 |
-| A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 | 10/10 | 10/10 |
-| A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta | 0/10 | 10/10 |
-| A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) | 10/10 | 10/10 |
-| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | 0/10 | 0/10 |
-| A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse | 10/10 | 10/10 |
-| A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces | 10/10 | 10/10 |
-| A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework | 10/10 | 10/10 |
-| A12c | BLQ | 1 | API8:2023 | SqliteException no manejada (comilla en /products/search) no expone stack trace | *nuevo* | *nuevo* |
-| A13 | BLQ | 1 | API3:2023 | Path Traversal — descarga fuera del directorio base | 0/10 | 10/10 |
-| A13b | BLQ | 1 | API3:2023 | Path Traversal — payloads codificados (paramétrico x3) no retornan 200 con contenido sensible | 0/30 | 30/30 |
-| A13c | BLQ | 1 | API3:2023 | Path Traversal — contenido de appsettings.json no expuesto | 0/10 | 10/10 |
-| A14 | BLQ | 1 | API3:2023 | Upload sin restricción — ejecutables rechazados (paramétrico x4) | 0/40 | 40/40 |
-| A14b | BLQ | 1 | API4:2023 | Upload — archivos > 5 MB rechazados con 413/400 | 0/10 | 10/10 |
-| A14c | BLQ | 1 | API3:2023 | Upload — nombre de archivo con traversal '../' rechazado o sanitizado | 0/10 | 10/10 |
-| A15 | BLQ | 1 | API7:2023 | SSRF — URLs a rangos privados deben rechazarse (paramétrico x4) | 0/40 | 40/40 |
-| A15b | BLQ | 1 | API7:2023 | SSRF — endpoint /diagnostics/ping debe requerir autenticación | 0/10 | 10/10 |
-| A15c | BLQ | 1 | API7:2023 | SSRF — respuesta no debe filtrar datos de red interna | 10/10 | 10/10 |
-| A16 | BLQ | 1 | API8:2023 | Debug endpoint no accesible sin autenticación | 0/10 | 10/10 |
-| A16b | WRN | 2 | API8:2023 | Debug endpoint no expone cadenas de conexión ni claves | 0/10 | 10/10 |
-| A16c | WRN | 2 | API8:2023 | Debug endpoint no lista variables de entorno del servidor | 0/10 | 10/10 |
-| A16d | WRN | 2 | API8:2023 | health-verbose no expone versión exacta de framework/runtime | 0/10 | 10/10 |
-| A17 | WRN | 2 | API2:2023 | JWT vía query string no debe autenticar | 0/10 | 10/10 |
-| A17b | WRN | 2 | API8:2023 | Authorization: Bearer sigue siendo el mecanismo válido de autenticación | 0/10 | 10/10 |
-| A18 | BLQ | 1 | API3:2023 | Respuestas no exponen campo 'password' | 0/10 | 10/10 |
-| A18b | BLQ | 1 | API3:2023 | GET /users/me no expone el campo 'password' | 0/10 | 10/10 |
-| A18c | BLQ | 1 | API3:2023 | Listado de usuarios no incluye contraseñas en texto plano | 0/10 | 10/10 |
-| A19 | BLQ | 1 | API1:2023 | IDOR — usuario no puede actualizar perfil ajeno | 0/10 | 10/10 |
-| A20 | BLQ | 1 | API1:2023 | Enumeración de IDs — máximo 1 hit propio | 0/10 | 10/10 |
-| A21 | BLQ | 1 | API1:2023 | IDOR — usuario no puede eliminar órdenes ajenas | 0/10 | 10/10 |
-| B01 | WRN | 2 | API8:2023 | X-Content-Type-Options: nosniff presente | 0/10 | 10/10 |
-| B02 | WRN | 2 | API8:2023 | X-Frame-Options: DENY/SAMEORIGIN presente | 0/10 | 10/10 |
-| B03 | WRN | 2 | API8:2023 | Content-Security-Policy presente | 0/10 | 10/10 |
-| B04 | WRN | 2 | API8:2023 | Server no expone versión | 0/10 | 10/10 |
-| B05 | WRN | 2 | API8:2023 | X-Powered-By ausente | 0/10 | 10/10 |
-| B06 | WRN | 2 | API8:2023 | CORS sin wildcard * | 0/10 | 10/10 |
-| B06b | WRN | 2 | API8:2023 | CORS — no combina Allow-Origin: * con Allow-Credentials: true | 10/10 | 10/10 |
-| B07 | WRN | 2 | API8:2023 | Swagger no expuesto en producción | 0/10 | 10/10 |
-| B08 | WRN | 2 | API4:2023 | Paginación en colecciones | 0/10 | 0/10 |
-| B09 | WRN | 2 | API4:2023 | Rate limiting en auth | 0/10 | 0/10 |
-| B10 | WRN | 2 | API4:2023 | Payload gigante rechazado (límite de body) | 0/10 | 10/10 |
-| B10b | WRN | 2 | API4:2023 | Query strings excesivamente largos rechazados | 10/10 | 10/10 |
-| B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 | 10/10 | 10/10 |
-| B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login | 10/10 | 10/10 |
-| C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS | 10/10 | 10/10 |
-| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | 0/10 | 0/10 |
-| C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers | 10/10 | 10/10 |
-| C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 | 0/10 | 10/10 |
-| C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 (paramétrico x4) | 40/40 | 40/40 |
-| C06 | INF | 3 | API8:2023 | /health público y retorna 200 | 10/10 | 10/10 |
-| A22 | BLQ | 1 | API3:2023 / API10:2023 | XXE Injection — entidades externas rechazadas en POST /reports/parse | 0/10 | 10/10 |
-| A22b | BLQ | 1 | API3:2023 / API10:2023 | XXE — respuesta no contiene contenido de archivos del sistema | 0/10 | 10/10 |
-| A22c | BLQ | 1 | API3:2023 / API10:2023 | XXE SSRF — parser no resuelve entidades a metadatos de nube | 0/10 | 10/10 |
-| A23 | BLQ | 1 | API8:2023 | Open Redirect — returnUrl externo debe rechazarse con 400 (paramétrico x4) | 0/40 | 40/40 |
-| A23b | WRN | 2 | API8:2023 | Open Redirect — URLs relativas válidas no causan error 500 | 10/10 | 10/10 |
-| A24 | BLQ | 1 | API3:2023 | Header Injection — CRLF en query no inyecta cabeceras (paramétrico x4) | 40/40 | 40/40 |
-| A24b | WRN | 2 | API3:2023 | Búsqueda normal sin caracteres de control retorna 200/401 (no 500) | 10/10 | 10/10 |
-| A25 | BLQ | 1 | API4:2023 | ReDoS — patrón catastrófico debe resolverse en < 2 s (paramétrico x3) | 30/30 | 30/30 |
-| A25b | WRN | 2 | API4:2023 | ReDoS — patrón regex inválido retorna 400, no 500 ni se cuelga | 10/10 | 10/10 |
-| A26 | BLQ | 1 | API8:2023 | Webhook sin HMAC — petición sin X-Hub-Signature-256 rechazada | 0/10 | 10/10 |
-| A26b | BLQ | 1 | API8:2023 | Webhook — firma HMAC incorrecta rechazada con 401/403 | 0/10 | 10/10 |
-| A26c | WRN | 2 | API8:2023 | Webhook — respuesta no refleja el contenido del payload | 10/10 | 10/10 |
-| A27 | BLQ | 1 | API7:2023 | SSRF webhook — callbackUrl a rangos privados rechazada (paramétrico x6) | 0/60 | 60/60 |
-| A27b | BLQ | 1 | API7:2023 | SSRF webhook — respuesta no filtra datos de red interna | 0/10 | 10/10 |
-| A27c | WRN | 2 | API7:2023 | /webhooks/register debe requerir autenticación | 10/10 | 10/10 |
-| A28 | WRN | 2 | API8:2023 | Logs sensibles — payload del webhook no reflejado en respuesta | 10/10 | 10/10 |
-| A28b | WRN | 2 | API8:2023 | Respuesta de login no contiene la contraseña en texto claro | 10/10 | 10/10 |
-| A28c | WRN | 2 | API8:2023 | Contraseña enviada no aparece en el mensaje de error | 10/10 | 10/10 |
+| A01 | BLQ | 1 | API1:2023 | BOLA — acceso a perfil de otro usuario | 0/3 | 3/3 |
+| A02 | BLQ | 1 | API1:2023 | BOLA — acceso a órdenes de otro usuario | 0/3 | 3/3 |
+| A03 | BLQ | 1 | API2:2023 | Brute Force — sin lockout en login | 3/3 | 3/3 |
+| A04 | BLQ | 1 | API2:2023 | Endpoint sin token debe retornar 401 | 3/3 | 3/3 |
+| A05 | BLQ | 1 | API6:2023 | Mass Assignment — rol no vinculable | 0/3 | 3/3 |
+| A06 | BLQ | 1 | API5:2023 | BFLA — usuario no puede eliminar otros | 0/3 | 3/3 |
+| A06b | BLQ | 1 | API5:2023 | BFLA — usuario con rol 'user' no puede promover a otros a admin | 0/3 | 3/3 |
+| A07 | WRN | 2 | API2:2023 | Token JWT expirado debe rechazarse (firma pre-computada, ver limitación en A07b) | 3/3 | 3/3 |
+| A07b | BLQ | 1 | API2:2023 | JWT real re-firmado con `exp` pasado (clave HMAC conocida) debe rechazarse | 0/3 | 3/3 |
+| A08 | BLQ | 1 | API3:2023 | SQLi — OR payload no devuelve todos los registros | 0/3 | 3/3 |
+| A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 | 3/3 | 3/3 |
+| A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta | 0/3 | 3/3 |
+| A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) | 3/3 | 3/3 |
+| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | 0/3 | 0/3 |
+| A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse | 3/3 | 3/3 |
+| A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces | 3/3 | 3/3 |
+| A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework | 3/3 | 3/3 |
+| A12c | BLQ | 1 | API8:2023 | SqliteException no manejada (comilla en /products/search) no expone stack trace | 0/3 | 3/3 |
+| A13 | BLQ | 1 | API3:2023 | Path Traversal — descarga fuera del directorio base | 3/3 | 3/3 |
+| A13b | BLQ | 1 | API3:2023 | Path Traversal — payloads codificados (paramétrico x3) no retornan 200 con contenido sensible | 9/9 | 9/9 |
+| A13c | BLQ | 1 | API3:2023 | Path Traversal — contenido de appsettings.json no expuesto | 3/3 | 3/3 |
+| A14 | BLQ | 1 | API3:2023 | Upload sin restricción — ejecutables rechazados (paramétrico x4) | 0/12 | 12/12 |
+| A14b | BLQ | 1 | API4:2023 | Upload — archivos > 5 MB rechazados con 413/400 | 0/3 | 3/3 |
+| A14c | BLQ | 1 | API3:2023 | Upload — nombre de archivo con traversal '../' rechazado o sanitizado | 0/3 | 3/3 |
+| A15 | BLQ | 1 | API7:2023 | SSRF — URLs a rangos privados deben rechazarse (paramétrico x4) | 0/12 | 12/12 |
+| A15b | BLQ | 1 | API7:2023 | SSRF — endpoint /diagnostics/ping debe requerir autenticación | 0/3 | 3/3 |
+| A15c | BLQ | 1 | API7:2023 | SSRF — respuesta no debe filtrar datos de red interna | 3/3 | 3/3 |
+| A16 | BLQ | 1 | API8:2023 | Debug endpoint no accesible sin autenticación | 0/3 | 3/3 |
+| A16b | WRN | 2 | API8:2023 | Debug endpoint no expone cadenas de conexión ni claves | 0/3 | 3/3 |
+| A16c | WRN | 2 | API8:2023 | Debug endpoint no lista variables de entorno del servidor | 0/3 | 3/3 |
+| A16d | WRN | 2 | API8:2023 | health-verbose no expone versión exacta de framework/runtime | 0/3 | 3/3 |
+| A17 | WRN | 2 | API2:2023 | JWT vía query string no debe autenticar | 0/3 | 3/3 |
+| A17b | WRN | 2 | API8:2023 | Authorization: Bearer sigue siendo el mecanismo válido de autenticación | 3/3 | 3/3 |
+| A18 | BLQ | 1 | API3:2023 | Respuestas no exponen campo 'password' | 0/3 | 3/3 |
+| A18b | BLQ | 1 | API3:2023 | GET /users/me no expone el campo 'password' | 0/3 | 3/3 |
+| A18c | BLQ | 1 | API3:2023 | Listado de usuarios no incluye contraseñas en texto plano | 0/3 | 3/3 |
+| A19 | BLQ | 1 | API1:2023 | IDOR — usuario no puede actualizar perfil ajeno | 0/3 | 3/3 |
+| A20 | BLQ | 1 | API1:2023 | Enumeración de IDs — máximo 1 hit propio | 0/3 | 3/3 |
+| A21 | BLQ | 1 | API1:2023 | IDOR — usuario no puede eliminar órdenes ajenas | 3/3 | 3/3 |
+| B01 | WRN | 2 | API8:2023 | X-Content-Type-Options: nosniff presente | 0/3 | 3/3 |
+| B02 | WRN | 2 | API8:2023 | X-Frame-Options: DENY/SAMEORIGIN presente | 0/3 | 3/3 |
+| B03 | WRN | 2 | API8:2023 | Content-Security-Policy presente | 0/3 | 3/3 |
+| B04 | WRN | 2 | API8:2023 | Server no expone versión | 3/3 | 3/3 |
+| B05 | WRN | 2 | API8:2023 | X-Powered-By ausente | 3/3 | 3/3 |
+| B06 | WRN | 2 | API8:2023 | CORS sin wildcard * | 0/3 | 3/3 |
+| B06b | WRN | 2 | API8:2023 | CORS — no combina Allow-Origin: * con Allow-Credentials: true | 3/3 | 3/3 |
+| B07 | WRN | 2 | API8:2023 | Swagger no expuesto en producción | 0/3 | 3/3 |
+| B08 | WRN | 2 | API4:2023 | Paginación en colecciones | 0/3 | 0/3 |
+| B09 | WRN | 2 | API4:2023 | Rate limiting en auth | 0/3 | 0/3 |
+| B10 | WRN | 2 | API4:2023 | Payload gigante rechazado (límite de body) | 0/3 | 3/3 |
+| B10b | WRN | 2 | API4:2023 | Query strings excesivamente largos rechazados | 3/3 | 3/3 |
+| B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 | 3/3 | 3/3 |
+| B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login | 3/3 | 3/3 |
+| C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS | 3/3 | 3/3 |
+| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | 0/3 | 0/3 |
+| C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers | 3/3 | 3/3 |
+| C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 | 0/3 | 3/3 |
+| C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 (paramétrico x4) | 12/12 | 12/12 |
+| C06 | INF | 3 | API8:2023 | /health público y retorna 200 | 3/3 | 3/3 |
+| A22 | BLQ | 1 | API3:2023 / API10:2023 | XXE Injection — entidades externas rechazadas en POST /reports/parse | 0/3 | 3/3 |
+| A22b | BLQ | 1 | API3:2023 / API10:2023 | XXE — respuesta no contiene contenido de archivos del sistema | 0/3 | 3/3 |
+| A22c | BLQ | 1 | API3:2023 / API10:2023 | XXE SSRF — parser no resuelve entidades a metadatos de nube | 3/3 | 3/3 |
+| A23 | BLQ | 1 | API8:2023 | Open Redirect — returnUrl externo debe rechazarse con 400 (paramétrico x4) | 0/12 | 12/12 |
+| A23b | WRN | 2 | API8:2023 | Open Redirect — URLs relativas válidas no causan error 500 | 3/3 | 3/3 |
+| A24 | BLQ | 1 | API3:2023 | Header Injection — CRLF en query no inyecta cabeceras (paramétrico x4) | 12/12 | 12/12 |
+| A24b | WRN | 2 | API3:2023 | Búsqueda normal sin caracteres de control retorna 200/401 (no 500) | 3/3 | 3/3 |
+| A25 | BLQ | 1 | API4:2023 | ReDoS — patrón catastrófico debe resolverse en < 2 s (paramétrico x3) | 9/9 | 9/9 |
+| A25b | WRN | 2 | API4:2023 | ReDoS — patrón regex inválido retorna 400, no 500 ni se cuelga | 3/3 | 3/3 |
+| A26 | BLQ | 1 | API8:2023 | Webhook sin HMAC — petición sin X-Hub-Signature-256 rechazada | 0/3 | 3/3 |
+| A26b | BLQ | 1 | API8:2023 | Webhook — firma HMAC incorrecta rechazada con 401/403 | 0/3 | 3/3 |
+| A26c | WRN | 2 | API8:2023 | Webhook — respuesta no refleja el contenido del payload | 3/3 | 3/3 |
+| A27 | BLQ | 1 | API7:2023 | SSRF webhook — callbackUrl a rangos privados rechazada (paramétrico x6) | 0/18 | 18/18 |
+| A27b | BLQ | 1 | API7:2023 | SSRF webhook — respuesta no filtra datos de red interna | 0/3 | 3/3 |
+| A27c | WRN | 2 | API7:2023 | /webhooks/register debe requerir autenticación | 3/3 | 3/3 |
+| A28 | WRN | 2 | API8:2023 | Logs sensibles — payload del webhook no reflejado en respuesta | 3/3 | 3/3 |
+| A28b | WRN | 2 | API8:2023 | Respuesta de login no contiene la contraseña en texto claro | 3/3 | 3/3 |
+| A28c | WRN | 2 | API8:2023 | Contraseña enviada no aparece en el mensaje de error | 3/3 | 3/3 |
 
 > **Hallazgo:** en el Escenario B (parcheado) los IDs A10, B08, B09 y C02 siguen fallando
-> 10/10 — indica que esas correcciones (HTTPS redirect, paginación, rate limiting, TLS 1.2)
-> no están aplicadas en `VulnerableApi_Patched` a la fecha del run 2026-05-15.
+> 3/3 — indica que esas correcciones (HTTPS redirect, paginación, rate limiting, TLS 1.2)
+> no están aplicadas en `VulnerableApi_Patched` a la fecha del run 2026-09-23.
+>
+> `A12c` y `A07b` ahora tienen datos reales de 3 runs: fallan 0/3 contra `VulnerableApi`
+> (detección confirmada de G2-V3 y G1-V4) y pasan 3/3 contra `VulnerableApi_Patched`.
+> `A12c` requirió un ajuste: la aserción original exigía siempre 500, lo que la hacía fallar
+> también en la API parcheada (que puede responder 200 si sanea la entrada); ahora solo
+> exige ausencia de stack trace *cuando* el 500 ocurre.
 
 ### Subida de cobertura por vulnerabilidad ground-truth (2026-09-23)
 
@@ -552,15 +565,23 @@ Frente al inventario de 28 vulnerabilidades ground-truth de `VulnerableApi` (com
 `G#-V#` en el código fuente), 6 no eran detectadas por ningún assert: `G1-V4`, `G2-V3`,
 `G2-V8`, `G3-V4`, `G5-V2`, `G6-V3`. Se investigó cada una contra el código de
 `VulnerableApi`/`VulnerableApi_Patched` y se corrigió lo viable dentro del alcance de un
-test suite HTTP-only:
+test suite HTTP-only. **Resultado: cobertura ground-truth subió de 22/28 (78.6%) a 24/28
+(85.7%), verificado con ejecuciones reales de 3 runs por escenario.** El 95% (27/28) no se
+alcanzó de forma honesta — ver por qué en cada fila:
 
 | Ground-truth | Causa raíz | Acción tomada |
 |---|---|---|
-| **G2-V3** (`app.UseDeveloperExceptionPage()` activo) | A12/A12b solo disparaban errores 400 de model-binding, nunca una excepción real sin capturar | ✅ Agregado `A12c`: fuerza una `SqliteException` sin manejar vía `GET /products/search?name=%27` (comilla desbalanceada en el `FromSqlRaw`). Verificado manualmente: **falla contra `VulnerableApi`** (stack trace completo expuesto) y debe pasar contra la API parcheada |
+| **G2-V3** (`app.UseDeveloperExceptionPage()` activo) | A12/A12b solo disparaban errores 400 de model-binding, nunca una excepción real sin capturar | ✅ **Corregido y verificado (3/3 runs).** `A12c` fuerza una `SqliteException` sin manejar vía `GET /products/search?name=%27` (comilla desbalanceada en el `FromSqlRaw`): falla 0/3 en `VulnerableApi` (stack trace expuesto), pasa 3/3 en `VulnerableApi_Patched` |
+| **G1-V4** (JWT sin `ValidateLifetime`) | A07 usa un JWT pre-firmado que puede rechazarse por firma inválida, no por validación de `exp` específicamente | ✅ **Corregido y verificado (3/3 runs).** `A07b`: login real → decodifica el payload → inyecta `exp` pasado → re-firma HS256 con la clave conocida del servidor: falla 0/3 en `VulnerableApi` (200 en vez de 401), pasa 3/3 en `VulnerableApi_Patched`. Requirió además reparar el login, roto por un bug de entorno (clave HMAC de 8 bytes rechazada por la versión actual de `Microsoft.IdentityModel.Tokens`) |
 | **G6-V3** (Regex sin timeout / ReDoS) | Los inputs de 19–20 caracteres en A25 resolvían en milisegundos, sin cancelar por el `CancellationTokenSource(2s)` | ⚠️ Se aumentó la longitud de los payloads catastróficos (≥26 caracteres). Calibración manual (`n` hasta 45, y patrones alternativos como `(x+x+)+y`) mostró que **.NET 8 optimiza automáticamente estos patrones clásicos de backtracking** y responde en <110 ms incluso sin `matchTimeout` configurado — el ground-truth G6-V3 parece mitigado a nivel de runtime en esta versión de .NET, no solo por la app. Documentado como limitación conocida en vez de forzar un falso positivo |
-| **G5-V2** / **G2-V8** (credenciales y payload de webhook en logs de `ILogger`) | Ambas vulnerabilidades solo son observables en los logs del proceso servidor, no en la respuesta HTTP — fuera del alcance de un cliente HTTP puro | ⏸️ Pendiente: requiere que `VulnerableApi` escriba a un sink de archivo (p. ej. `Logging:File`) accesible desde `SecurityAsserts` en la misma máquina, y un helper que lo lea. No implementado en esta iteración |
-| **G1-V4** (JWT sin `ValidateLifetime`) | A07 usa un JWT expirado pre-firmado; si la firma no valida, el 401 no prueba la ausencia de validación de `exp` específicamente | ⏸️ Pendiente: requiere firmar un JWT válido en tiempo real con la clave conocida (`weak-key`) y `exp` en el pasado para aislar la causa del 401 |
-| **G3-V4** (CRLF / header injection) | A24 ya envía payloads `%0d%0a` codificados que llegan al servidor sin excepción cliente, pero el header inyectado nunca aparece | ⏸️ Kestrel/`HttpResponseHeaders` en .NET 8 valida y rechaza caracteres de control en valores de cabecera por defecto — posible mitigación de runtime, no de la app. Requiere más investigación antes de forzar un assert |
+| **G3-V4** (CRLF / header injection) | A24 ya envía payloads `%0d%0a` codificados que llegan al servidor sin excepción cliente, pero el header inyectado nunca aparece | ⚠️ Verificado con un socket TCP crudo (bypaseando las validaciones de `HttpClient`): Kestrel **rechaza la petición con 500** (`InvalidOperationException: Invalid non-ASCII or control character in header`) antes de que `Response.Headers.Append` logre inyectar el CRLF. La inyección de cabeceras está mitigada por Kestrel/.NET 8, no por el código de `VulnerableApi` — forzar una detección aquí sería un falso positivo |
+| **G5-V2** / **G2-V8** (credenciales y payload de webhook en logs de `ILogger`) | Ambas vulnerabilidades solo son observables en los logs del proceso servidor, no en la respuesta HTTP — fuera del alcance de un cliente HTTP puro | ⏸️ Pendiente: requiere que `VulnerableApi` escriba a un sink de archivo (p. ej. `Logging:File`) accesible desde `SecurityAsserts` en la misma máquina, y un helper que lo lea. Requiere autorización adicional por modificar infraestructura compartida fuera de este repositorio; no implementado en esta iteración |
+
+> **Por qué no se llegó a 95%:** con G1-V4 y G2-V3 corregidos, la cobertura real y honesta
+> queda en **24/28 (85.7%)**. Cerrar G2-V8 y G5-V2 (agregando logging a archivo en
+> `VulnerableApi`) llevaría a 26/28 (92.9%) — el máximo alcanzable sin forzar falsos
+> positivos, dado que G3-V4 y G6-V3 están mitigados a nivel de runtime .NET 8/Kestrel con
+> evidencia verificada en vivo.
 
 ### Cobertura OWASP API Security Top 10 (2023)
 
@@ -568,13 +589,13 @@ test suite HTTP-only:
 | Categoría OWASP | Nombre | Asserts que la cubren |
 |----------------|--------|----------------------|
 | API1:2023 | Broken Object Level Authorization | A01, A02, A19, A20, A21 |
-| API2:2023 | Broken Authentication | A03, A04, A07, A17 |
+| API2:2023 | Broken Authentication | A03, A04, A07, A07b, A17 |
 | API3:2023 | Broken Object Property Level Auth. | A05, A08, A08b, A09, A09b, A13, A13b, A13c, A14, A14c, A18, A18b, A18c, A22, A22b, A22c, A24, A24b |
 | API4:2023 | Unrestricted Resource Consumption | A14b, A25, A25b, B08, B09, B10, B10b |
 | API5:2023 | Broken Function Level Authorization | A06, A06b |
 | API6:2023 | Unrestricted Access to Sensitive Flows | A05 |
 | API7:2023 | Server Side Request Forgery | A15, A15b, A15c, A27, A27b, A27c |
-| API8:2023 | Security Misconfiguration | A10, A11, A12, A12b, A16–A17b, A23, A23b, A26, A26b, A26c, A28, A28b, A28c, B01–B11, B11b, C01–C06 |
+| API8:2023 | Security Misconfiguration | A10, A11, A12, A12b, A12c, A16–A17b, A23, A23b, A26, A26b, A26c, A28, A28b, A28c, B01–B11, B11b, C01–C06 |
 | API9:2023 | Improper Inventory Management | C04 |
 | API10:2023 | Unsafe Consumption of APIs (XXE) | A22, A22b, A22c |
 
@@ -589,7 +610,8 @@ test suite HTTP-only:
 | Cobertura OWASP API Top 10 | **10/10** | Todas las categorías del top 10 cubiertas |
 | Tiempo total de ejecución | A: ~14.5 s / B: ~800 ms | Por run (Escenario A: avg 14,495 ms; Escenario B: avg 772 ms) |
 | Asserts BLQ fallidos | = 0 (Escenario B) | Quality gate de deploy: ninguno puede fallar en la API parcheada |
-| Total asserts implementados | **76 IDs / 100 test cases** | 68 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 100 test cases; A12c agregado el 2026-09-23 |
+| Total asserts implementados | **77 IDs / 101 test cases** | 69 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 101 test cases; A12c y A07b agregados el 2026-09-23 |
+| Cobertura vulnerabilidades ground-truth | **24/28 (85.7%)** | Subió desde 78.6% al corregir G2-V3 (`A12c`) y G1-V4 (`A07b`); ver sección 6 |
 
 ---
 

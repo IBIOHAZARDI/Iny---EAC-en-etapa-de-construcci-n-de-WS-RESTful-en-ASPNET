@@ -2,11 +2,14 @@
     Cuenta resultados Passed/Failed por ID de assert (trait "Assert") a partir de los TRX
     en TestResults/, agrupando por escenario (A/B). El ID se deriva del nombre del método
     de test (p. ej. "A15_SSRF_..." -> "A15"), que es 1:1 con [Trait("Assert","A15")].
-    Uso: pwsh reports/Get-AssertCountsFromTrx.ps1
+    Uso: pwsh reports/Get-AssertCountsFromTrx.ps1 -Fecha 2026-09-23
 #>
+param(
+    [string]$Fecha = "2026-05-15"
+)
 
 $resultsDir = Join-Path $PSScriptRoot "..\TestResults"
-$trxFiles = Get-ChildItem $resultsDir -Filter "Scenario*_2026-05-15.trx"
+$trxFiles = Get-ChildItem $resultsDir -Filter "Scenario*_$Fecha.trx"
 
 # assertId -> @{ A = @{Passed=0;Failed=0}; B = @{Passed=0;Failed=0} }
 $counts = @{}
@@ -58,7 +61,7 @@ $rows = foreach ($id in ($counts.Keys | Sort-Object)) {
 }
 
 $rows | Format-Table -AutoSize
-$rows | Export-Csv (Join-Path $PSScriptRoot "AssertCounts_TRX_2026-05-15.csv") -NoTypeInformation -Encoding UTF8
+$rows | Export-Csv (Join-Path $PSScriptRoot "AssertCounts_TRX_$Fecha.csv") -NoTypeInformation -Encoding UTF8
 
 Write-Host ""
 Write-Host "Total IDs distintos encontrados en TRX: $($rows.Count)"

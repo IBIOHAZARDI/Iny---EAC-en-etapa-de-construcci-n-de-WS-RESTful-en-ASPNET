@@ -81,7 +81,7 @@ public class G3_PathTraversal_Asserts
             var body = await response.Content.ReadAsStringAsync();
             // Si retorna 200, el body NO debe contener secretos del appsettings
             body.Should().NotContainAny(
-                new[] { "weak-key", "ConnectionStrings", "DefaultConnection", "JwtKey" },
+                new[] { "weak-key", "weak-key-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "ConnectionStrings", "DefaultConnection", "JwtKey" },
                 because: "A13c — Path Traversal: el contenido de appsettings.json NO debe estar expuesto");
         }
         // Si retorna 400/403/404, el assert pasa automáticamente

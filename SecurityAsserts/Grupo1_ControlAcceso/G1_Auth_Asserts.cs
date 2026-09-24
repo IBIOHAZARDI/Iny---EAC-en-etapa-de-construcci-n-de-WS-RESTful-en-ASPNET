@@ -109,4 +109,60 @@ public class G1_Auth_Asserts
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
             because: "A11 — Token con algoritmo 'none' debe ser rechazado con 401");
     }
+
+    // A07 usa un JWT pre-firmado que puede rechazarse por firma inválida, no por
+    // validación de exp. A07b aísla esa causa: toma un token REAL (login), le
+    // inyecta un exp pasado y lo re-firma HS256 con la clave conocida
+    // "weak-key-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", de modo que un 200 solo puede
+    // explicarse por ValidateLifetime=false (G1-V4).
+    [Fact]
+    [Trait("Assert",  "A07b")]
+    [Trait("Oleada",  "Oleada1")]
+    [Trait("Category","BLQ")]
+    [Trait("OWASP",   "API2:2023")]
+    public async Task A07b_Auth_RealTokenReSignedWithPastExp_ShouldReturn401()
+    {
+        using var loginClient = TestConfig.CreateClient();
+        var realToken = await AuthHelper.GetTokenAsync(loginClient, TestConfig.UserAEmail, TestConfig.UserAPassword);
+
+        var parts = realToken.Split('.');
+        var payloadJson = System.Text.Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
+
+        using var doc = JsonDocument.Parse(payloadJson);
+        var claims = new Dictionary<string, object>();
+        foreach (var prop in doc.RootElement.EnumerateObject())
+        {
+            claims[prop.Name] = prop.Value.ValueKind == JsonValueKind.Number
+                ? prop.Value.GetInt64()
+                : prop.Value.GetString()!;
+        }
+        claims["exp"] = 1L; // Unix epoch 1970 — claramente expirado
+
+        var newPayloadB64 = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(claims)));
+        var signingInput = $"{parts[0]}.{newPayloadB64}";
+
+        using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes("weak-key-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"));
+        var signatureB64 = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(signingInput)));
+        var forgedToken = $"{signingInput}.{signatureB64}";
+
+        using var client = TestConfig.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", forgedToken);
+
+        var response = await client.GetAsync($"/api/v2/users/{TestConfig.UserAId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
+            because: "A07b — G1-V4: un token con firma HS256 válida pero exp pasado debe rechazarse " +
+                     "(si retorna 200 confirma ValidateLifetime=false)");
+    }
+
+    private static string Base64UrlEncode(byte[] input) =>
+        Convert.ToBase64String(input).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    private static byte[] Base64UrlDecode(string input)
+    {
+        var s = input.Replace('-', '+').Replace('_', '/');
+        s += (s.Length % 4) switch { 2 => "==", 3 => "=", _ => "" };
+        return Convert.FromBase64String(s);
+    }
 }

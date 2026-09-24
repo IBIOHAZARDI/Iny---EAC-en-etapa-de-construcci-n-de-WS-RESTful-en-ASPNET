@@ -46,7 +46,7 @@ public class G5_DebugInfo_Asserts
         {
             var body = await response.Content.ReadAsStringAsync();
             body.Should().NotContainAny(
-                new[] { "DefaultConnection", "Data Source=", "Server=", "Password=", "weak-key" },
+                new[] { "DefaultConnection", "Data Source=", "Server=", "Password=", "weak-key", "weak-key-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" },
                 because: "A16b — El endpoint de diagnóstico NO debe exponer cadenas de conexión ni claves");
         }
     }
