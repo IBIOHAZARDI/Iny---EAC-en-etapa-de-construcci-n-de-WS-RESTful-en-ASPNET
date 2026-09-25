@@ -5,6 +5,8 @@ using SecurityAsserts.Configuration;
 using SecurityAsserts.Helpers;
 using Xunit;
 
+using System.IO;
+
 namespace SecurityAsserts.Grupo5_Servidor;
 
 /// <summary>
@@ -22,6 +24,25 @@ namespace SecurityAsserts.Grupo5_Servidor;
 /// </summary>
 public class G5_SensitiveLogs_Asserts
 {
+    private static string GetTargetLogPath()
+    {
+        var isPatched = TestConfig.BaseUrl.Contains("5002");
+        var root = isPatched
+            ? "C:\\Trabajo\\Universidad\\Desarrollo\\VulnerableApi_Patched\\bin\\Debug\\net8.0"
+            : "C:\\Trabajo\\Universidad\\Desarrollo\\VulnerableApi\\bin\\Debug\\net8.0";
+
+        return Path.Combine(root, "logs", "app.log");
+    }
+
+    private static string ReadLogTail()
+    {
+        var path = GetTargetLogPath();
+        if (!File.Exists(path))
+            return string.Empty;
+
+        return File.ReadAllText(path);
+    }
+
     [Fact]
     [Trait("Assert",  "A28")]
     [Trait("Oleada",  "Oleada2")]
@@ -96,5 +117,73 @@ public class G5_SensitiveLogs_Asserts
 
         body.Should().NotContain(fakePassword,
             because: "A28c — La contraseña enviada no debe aparecer en el mensaje de error");
+    }
+
+    [Fact]
+    [Trait("Assert",  "A28d")]
+    [Trait("Oleada",  "Oleada2")]
+    [Trait("Category","WRN")]
+    [Trait("OWASP",   "API8:2023")]
+    public async Task A28d_LoginCredentialsShouldLeakIntoApplicationLogsOnVulnerableApi()
+    {
+        using var client = TestConfig.CreateClient();
+        var uniquePassword = $"P@ssA28d-{Guid.NewGuid():N}";
+
+        var response = await client.PostAsJsonAsync("/api/v2/auth/login",
+            new { email = TestConfig.UserAEmail, password = uniquePassword });
+
+        response.StatusCode.Should().BeOneOf(
+            new[] { HttpStatusCode.OK, HttpStatusCode.Unauthorized },
+            because: "A28d — El login puede fallar si la contraseña no se reconoce; lo importante es verificar si se registra en logs");
+
+        var logText = ReadLogTail();
+        var hasLeak = logText.Contains(TestConfig.UserAEmail) && logText.Contains(uniquePassword);
+
+        if (TestConfig.BaseUrl.Contains("5002"))
+        {
+            hasLeak.Should().BeFalse(
+                because: "A28d — La API parcheada no debe registrar credenciales ni password en el archivo de logs");
+        }
+        else
+        {
+            hasLeak.Should().BeTrue(
+                because: "A28d — La API vulnerable registra email y password en texto plano en el log");
+        }
+    }
+
+    [Fact]
+    [Trait("Assert",  "A28e")]
+    [Trait("Oleada",  "Oleada2")]
+    [Trait("Category","WRN")]
+    [Trait("OWASP",   "API8:2023")]
+    public async Task A28e_WebhookPayloadShouldLeakIntoApplicationLogsOnVulnerableApi()
+    {
+        using var client = TestConfig.CreateClient();
+        var marker = $"WEBHOOK-TRACE-{Guid.NewGuid():N}";
+        var secret = $"api-key-{Guid.NewGuid():N}";
+
+        var payload = new StringContent(
+            $$"""{"eventType":"order.created","marker":"{{marker}}","apiKey":"{{secret}}"}""",
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        var response = await client.PostAsync("/api/v2/webhooks/receive", payload);
+        var body = await response.Content.ReadAsStringAsync();
+
+        body.Should().NotBeNullOrEmpty();
+
+        var logText = ReadLogTail();
+        var hasLeak = logText.Contains(marker) && logText.Contains(secret);
+
+        if (TestConfig.BaseUrl.Contains("5002"))
+        {
+            hasLeak.Should().BeFalse(
+                because: "A28e — La API parcheada no debe registrar el payload completo del webhook en el archivo de logs");
+        }
+        else
+        {
+            hasLeak.Should().BeTrue(
+                because: "A28e — La API vulnerable registra el payload completo del webhook en el log");
+        }
     }
 }

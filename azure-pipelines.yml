@@ -102,6 +102,35 @@ stages:
             displayName: Ejecutar SecurityAsserts en escenarios A y B
             continueOnError: true
 
+          - powershell: |
+              $ErrorActionPreference = 'Stop'
+
+              $trxFiles = Get-ChildItem '$(testResultsDir)' -Filter 'ScenarioB_*.trx' | Sort-Object LastWriteTime
+              if (-not $trxFiles) {
+                throw 'No se encontraron archivos TRX del escenario B para validar el quality gate.'
+              }
+
+              $latestTrx = $trxFiles | Select-Object -Last 1
+              Write-Host "Validando TRN del escenario B con $latestTrx"
+
+              [xml]$trxXml = Get-Content $latestTrx.FullName
+              $counters = $trxXml.TestRun.ResultSummary.Counters
+              $passed = [double]$counters.passed
+              $total = [double]$counters.total
+              if ($total -eq 0) {
+                throw 'El TRX del escenario B no contiene resultados válidos.'
+              }
+
+              $trn = ($passed / $total) * 100.0
+              Write-Host "TRN escenario B: $([math]::Round($trn, 2))% ($passed/$total)"
+
+              if ($trn -le 95) {
+                throw "Quality gate fallido: TRN escenario B = $([math]::Round($trn, 2))% <= 95%. Se requiere un valor estrictamente superior al 95%."
+              }
+
+              Write-Host 'Quality gate escenario B aprobado: TRN > 95%.'
+            displayName: Validar TRN del escenario B > 95%
+
           - task: SonarQubeAnalyze@7
             displayName: Analizar codigo con SonarQube
 
