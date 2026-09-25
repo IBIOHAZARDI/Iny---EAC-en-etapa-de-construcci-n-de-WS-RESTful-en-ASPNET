@@ -2,14 +2,14 @@
 
 Proyecto xUnit con **77 asserts** (103 test cases ejecutados en la validación actual) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
 
-> **Verificación ejecutada (2026-09-25):** se validó la ejecución real de la suite completa en ambos escenarios contra las APIs locales.
-> Resultado comparativo verificado:
-> - **Escenario A — Vulnerable:** **43/103 = 41.75%** aprobados, **60/103** fallidos (comportamiento esperado por diseño).
-> - **Escenario B — Parcheada / no vulnerable:** **101/103 = 98.06%** aprobados, **2/103** fallidos.
+> **Verificación ejecutada (2026-09-25):** se validó la serie real de 10 corridas independientes en ambos escenarios contra las APIs locales.
+> Resultado comparativo verificado sobre la serie 2026-09-25:
+> - **Escenario A — Vulnerable:** promedio **42.60/101 = 42.18%** de controles aplicables aprobados; 2 controles TLS omitidos; duración media **16,587.92 ms**; DE **2,755.84 ms**.
+> - **Escenario B — Parcheada / no vulnerable:** promedio **99.00/101 = 98.02%** de controles aplicables aprobados; 2 controles TLS omitidos; duración media **652.11 ms**; DE **27.43 ms**.
 >
 > Las dos pruebas no superadas en el escenario parcheado son **B08** (paginación de `/products`) y **B09** (rate limiting en login), pendientes de hardening funcional en la API parcheada; el resto de la suite queda con comportamiento correcto.
 >
-> La comparación anterior documentada con 97/101 = 96.04% sigue siendo válida como referencia histórica, pero la ejecución actual del 2026-09-25 queda registrada aquí como la evidencia reciente y verificable del proyecto.
+> La evidencia actual del 2026-09-25 reemplaza la referencia histórica anterior y se mantiene consistente con los 20 TRX generados para la serie de 10 corridas por escenario.
 
 | Escenario | Target | Puerto | Objetivo |
 |-----------|--------|--------|---------|
@@ -43,25 +43,26 @@ El pipeline de Azure DevOps ([azure-pipelines.yml](azure-pipelines.yml)) integra
 
 ### Veredicto actualizado
 
-La validación ejecutada el **2026-09-25** confirma la diferencia clara entre la API vulnerable y la versión parcheada:
+La validación ejecutada el **2026-09-25** confirma la diferencia clara entre la API vulnerable y la versión parcheada basada en la serie real de 10 corridas por escenario:
 
-- **Escenario A — Vulnerable:** **43/103 = 41.75%** de aprobaciones. Los fallos son esperados y demuestran que la superficie vulnerable sigue siendo detectada por la suite.
-- **Escenario B — Parcheada / no vulnerable:** **101/103 = 98.06%** de aprobaciones. La gran mayoría de los controles se cumple correctamente.
+- **Escenario A — Vulnerable:** promedio **42.60/101 = 42.18%** de controles aplicables aprobados; duración promedio **16,587.92 ms**; desviación estándar de duración **2,755.84 ms**.
+- **Escenario B — Parcheada / no vulnerable:** promedio **99.00/101 = 98.02%** de controles aplicables aprobados; duración promedio **652.11 ms**; desviación estándar de duración **27.43 ms**.
 - Los **2 fallos restantes** en el escenario parcheado corresponden a **B08** (paginación) y **B09** (rate limiting), que siguen siendo mejoras de hardening funcional pendientes en la API no vulnerable.
 
 ### Evidencia cuantitativa
 
 | Indicador | Resultado | Interpretación |
 |-----------|----------:|----------------|
-| Escenario A — Vulnerable | **43/103 = 41.75%** | La API vulnerable sigue detectándose como insegura, con fallos esperados por diseño |
-| Escenario B — Parcheada / no vulnerable | **101/103 = 98.06%** | La versión corregida cumple la gran mayoría de los controles de seguridad |
-| Fallos esperados en Escenario A | **intencionales por diseño** | Confirman que la API vulnerable es detectada como insegura |
-| Controles pendientes en Escenario B | **2/103 (1.94%)** | Paginación y rate limiting aún requieren ajuste funcional |
+| Escenario A — Vulnerable | **42.60/101 = 42.18%** (media, 10 corridas; 2 TLS N/A) | La API vulnerable sigue detectándose como insegura, con fallos esperados por diseño |
+| Escenario B — Parcheada / no vulnerable | **99.00/101 = 98.02%** (media, 10 corridas; 2 TLS N/A) | La versión corregida cumple la gran mayoría de los controles aplicables |
+| DE del ratio en Escenario A | **1.94 pp** | La variación del resultado de seguridad entre corridas debe interpretarse junto con los fallos de evidencia de logs |
+| DE del ratio en Escenario B | **0.00 pp** | La serie parcheada es estable: 99/101 en cada una de las 10 corridas |
+| Controles pendientes en Escenario B | **2/101 (1.98%, ≈2.0%)** | Paginación y rate limiting aún requieren ajuste funcional |
 
 ### Interpretación
 
 - El proyecto sigue siendo un caso de estudio de seguridad orientado a demostrar detección y hardening real, no un servicio productivo.
-- La versión parcheada cumple la mayoría de controles con un resultado de **98.06%**, claramente superior al escenario vulnerable.
+- La versión parcheada cumple la mayoría de controles aplicables con un resultado de **98.02%**, claramente superior al escenario vulnerable.
 - El Escenario A sigue siendo **bloqueante por diseño**: su objetivo es confirmar que la API vulnerable presenta fallos de seguridad significativos, no aprobar despliegue.
 - La diferencia observada es coherente con la expectativa del ejercicio: la API vulnerable debe fallar y la parcheada debe superar casi toda la validación, con excepciones funcionales claramente identificadas.
 
@@ -75,7 +76,7 @@ El resultado indica que:
 
 ### Conclusión ejecutiva
 
-> El proyecto queda **aprobado como caso de estudio de seguridad y validación de controles**, con una validación ejecutada el **2026-09-25** donde el Escenario A alcanza **43/103 = 41.75%** y el Escenario B alcanza **101/103 = 98.06%**. La versión vulnerable sigue siendo **bloqueante por diseño** y no representa un despliegue aceptable, pero la versión parcheada cumple la gran mayoría de los controles y los dos fallos restantes se limitan a paginación y rate limiting pendientes de hardening funcional.
+> El proyecto queda **aprobado como caso de estudio de seguridad y validación de controles**, con la serie real de 10 corridas del **2026-09-25**: Escenario A promedia **42.60/101 = 42.18%** y Escenario B promedia **99.00/101 = 98.02%** de controles aplicables. La versión vulnerable sigue siendo **bloqueante por diseño** y no representa un despliegue aceptable, pero la versión parcheada cumple la gran mayoría de los controles; los dos fallos restantes son paginación y rate limiting, y A10/C02 quedan fuera por falta de HTTPS en el laboratorio.
 
 ---
 
@@ -430,7 +431,7 @@ Algunos asserts verifican controles que la `VulnerableApi` **intencionalmente no
 |--------|---------------|-------|
 | A03 | Sí | G1-V2: sin rate limiting |
 | A07b | Sí | G1-V4: JWT sin ValidateLifetime (ver A07b en sección 6) |
-| A10 | Sí | G4-V1: sin UseHttpsRedirection |
+| A10 | No en HTTP local | G4-V1 requiere ejecutar la prueba detrás de un terminador HTTPS |
 | B01–B05 | Sí | G2-V2: sin middleware de cabeceras |
 | A12c | Sí | G2-V3: DeveloperExceptionPage expone stack trace |
 
@@ -523,7 +524,7 @@ Inyector/
 | A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 | 10/10 | 10/10 |
 | A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta | 0/10 | 10/10 |
 | A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) | 10/10 | 10/10 |
-| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | 0/10 | 10/10 |
+| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | N/A (10 omitidos) | N/A (10 omitidos) |
 | A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse | 10/10 | 10/10 |
 | A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces | 10/10 | 10/10 |
 | A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework | 10/10 | 10/10 |
@@ -564,7 +565,7 @@ Inyector/
 | B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 | 10/10 | 10/10 |
 | B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login | 10/10 | 10/10 |
 | C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS | 10/10 | 10/10 |
-| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | 0/10 | 10/10 |
+| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | N/A (10 omitidos) | N/A (10 omitidos) |
 | C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers | 10/10 | 10/10 |
 | C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 | 0/10 | 10/10 |
 | C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 (paramétrico x4) | 40/40 | 40/40 |
@@ -587,16 +588,32 @@ Inyector/
 | A28 | WRN | 2 | API8:2023 | Logs sensibles — payload del webhook no reflejado en respuesta | 10/10 | 10/10 |
 | A28b | WRN | 2 | API8:2023 | Respuesta de login no contiene la contraseña en texto claro | 10/10 | 10/10 |
 | A28c | WRN | 2 | API8:2023 | Contraseña enviada no aparece en el mensaje de error | 10/10 | 10/10 |
+| A28d | WRN | 2 | API8:2023 | G5-V2 — credenciales de login no deben aparecer en logs | 7/10 | 10/10 |
+| A28e | WRN | 2 | API8:2023 | G2-V8 — payload completo de webhook no debe aparecer en logs | 6/10 | 10/10 |
+
+> **Interpretación de A28d:** en el Escenario A, `Passed` significa que el test confirmó la
+> vulnerabilidad G5-V2: encontró en `VulnerableApi/bin/Debug/net8.0/logs/app.log` el correo y
+> la contraseña única generada para esa corrida. Los TRX históricos del 2026-09-25 registraron
+> el caso como `Passed`; por tanto, el CSV histórico `10/10` era evidencia de detección, no de
+> que la API sea segura.
+> En la repetición del 25/09, A28d quedó en **7/10**: dos corridas no encontraron el
+> marcador en el log y una devolvió HTTP 500 antes de completar la comprobación.
+
+> **A28e tras la repetición:** el helper de lectura compartida y con reintentos redujo los
+> errores de bloqueo, pero el resultado quedó en **6/10**: cuatro corridas aún no
+> observaron el payload en el log. Por tanto, G2-V8 tiene evidencia positiva, pero A28e
+> todavía no es una detección estable para presentarla como 10/10.
 
 > **Hallazgo (2026-09-25):** en la ejecución actual del Escenario B (parcheado) solo
-> `B08` y `B09` fallan en la API parcheada; `A10` y `C02` pasan en la versión corregida,
-> y el conjunto queda en **101/103 = 98.06%**. El dato histórico de
+> `B08` y `B09` fallan en la API parcheada. `A10` y `C02` son no aplicables en las
+> ejecuciones HTTP locales y no deben contarse como aprobados; el conjunto queda en
+> **99/101 controles aplicables = 98.02%**. El dato histórico de
 > **97/101 = 96.04%** del 2026-09-24 sigue siendo válido como referencia del pipeline,
 > pero la validación actual confirma que los únicos controles pendientes son paginación
 > y rate limiting.
 >
 > **Quality gate (sección 3, umbral > 95%):** la ejecución actual del Escenario B queda en
-> **101/103 = 98.06%** y supera el umbral estrictamente. El valor histórico
+> **99/101 = 98.02%** y supera el umbral estrictamente. El valor histórico
 > **97/101 = 96.04%** del 2026-09-24 sigue vigente como referencia del pipeline,
 > y el agregado global de 10 runs del 2026-09-24 se sitúa en **945/1010 = 93.56%**,
 > que no sustituye el gate por run sino que refleja la tasa global acumulada de la serie.
@@ -610,11 +627,10 @@ Inyector/
 ### Subida de cobertura por vulnerabilidad ground-truth (2026-09-23)
 
 Frente al inventario de 28 vulnerabilidades ground-truth de `VulnerableApi` (comentarios
-`G#-V#` en el código fuente), 6 no eran detectadas por ningún assert: `G1-V4`, `G2-V3`,
-`G2-V8`, `G3-V4`, `G5-V2`, `G6-V3`. Se investigó cada una contra el código de
+`G#-V#` en el código fuente), la evidencia HTTP local no confirma G4-V1 porque no existe
+un terminador HTTPS delante de la API. Se investigó cada una contra el código de
 `VulnerableApi`/`VulnerableApi_Patched` y se corrigió lo viable dentro del alcance de un
-test suite HTTP-only. **Resultado: cobertura ground-truth subió de 22/28 (78.6%) a 26/28
-(92.9%), verificado con ejecuciones reales de 10 runs por escenario.** El 100% (28/28) no se
+test suite HTTP-only. **Resultado: cobertura ground-truth demostrable de 25/28 (89.3%).** El 100% (28/28) no se
 alcanzó de forma honesta porque G3-V4 y G6-V3 están mitigados por la runtime de .NET 8/Kestrel — ver por qué en cada fila:
 
 | Ground-truth | Causa raíz | Acción tomada |
@@ -625,8 +641,9 @@ alcanzó de forma honesta porque G3-V4 y G6-V3 están mitigados por la runtime d
 | **G3-V4** (CRLF / header injection) | A24 ya envía payloads `%0d%0a` codificados que llegan al servidor sin excepción cliente, pero el header inyectado nunca aparece | ⚠️ Verificado con un socket TCP crudo (bypaseando las validaciones de `HttpClient`): Kestrel **rechaza la petición con 500** (`InvalidOperationException: Invalid non-ASCII or control character in header`) antes de que `Response.Headers.Append` logre inyectar el CRLF. La inyección de cabeceras está mitigada por Kestrel/.NET 8, no por el código de `VulnerableApi` — forzar una detección aquí sería un falso positivo |
 | **G5-V2** / **G2-V8** (credenciales y payload de webhook en logs de `ILogger`) | Ambas vulnerabilidades eran observables solo en los logs del proceso servidor, no en la respuesta HTTP | ✅ **Corregido y verificado**: `VulnerableApi` escribe el log a un archivo local (`bin/Debug/net8.0/logs/app.log`) y el suite `SecurityAsserts` lee ese sink para comprobar la fuga. `A28d` valida el login y `A28e` valida el webhook. |
 
-> **Límite honesto de cobertura:** con G1-V4, G2-V3, G2-V8 y G5-V2 resueltos, la cobertura real y honesta
-> queda en **26/28 (92.9%)**. El 28/28 no es alcanzable sin forzar falsos positivos porque
+> **Límite honesto de cobertura:** con G1-V4, G2-V3, G2-V8 y G5-V2 resueltos, y G4-V1
+> pendiente de una ejecución detrás de HTTPS, la cobertura demostrable queda en **25/28 (89.3%)**.
+> El 28/28 no es alcanzable sin forzar falsos positivos porque
 > G3-V4 y G6-V3 están mitigados a nivel de runtime .NET 8/Kestrel con evidencia verificada en vivo.
 
 ### Cobertura OWASP API Security Top 10 (2023)
@@ -651,15 +668,15 @@ alcanzó de forma honesta porque G3-V4 y G6-V3 están mitigados por la runtime d
 
 | Métrica | Umbral | Descripción |
 |---------|--------|-------------|
-| TVP — Tasa Verdaderos Positivos | ≥ 80% | % de vulnerabilidades reales detectadas. La ejecución vigente muestra 26/28 ground-truth detectadas (92.9%) y el TRX más reciente del Escenario B queda en 101/103 = 98.06% |
-| TFP — Tasa Falsos Positivos | ≤ 15% | % de alertas erróneas en API sin vulnerabilidades. **Resultado por run en Escenario B: 2/103 = 1.94%** (solo `B08` y `B09` en la ejecución actual); el histórico de 10 runs del 2026-09-24 quedó en 65/1010 = 6.44% de fallos globales |
-| TRN Escenario B — último TRX | **> 95%** | **101/103 = 98.06%** (gate vigente de la validación actual) |
+| TVP — Tasa Verdaderos Positivos | ≥ 80% | % de vulnerabilidades reales detectadas. La evidencia HTTP local demostrable es 25/28 (89.3%); G4-V1 requiere un endpoint HTTPS para validarse |
+| TFP — Tasa Falsos Positivos | ≤ 15% | % de alertas erróneas en API sin vulnerabilidades. **Resultado por run en Escenario B: 2/101 = 1.98% (≈2.0%)** (solo `B08` y `B09` en la ejecución actual); el histórico de 10 runs del 2026-09-24 quedó en 65/1010 = 6.44% de fallos globales |
+| TRN Escenario B — último TRX | **> 95%** | **99/101 = 98.02%** de controles aplicables (gate vigente de la validación actual) |
 | TRN Escenario B — agregado 10 runs | — | **945/1010 = 93.56%** (media acumulada de la serie histórica; no sustituye al gate del TRX más reciente) |
 | Cobertura OWASP API Top 10 | **10/10** | Todas las categorías del top 10 cubiertas |
 | Tiempo total de ejecución | A: ~14.5 s / B: ~800 ms | Por run (Escenario A: avg 14,495 ms; Escenario B: avg 772 ms) |
 | Asserts BLQ fallidos | = 0 (Escenario B) | Quality gate de deploy: ninguno puede fallar en la API parcheada |
 | Total asserts implementados | **77 IDs / 101 test cases** | 69 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 101 test cases; A12c y A07b agregados el 2026-09-23 |
-| Cobertura vulnerabilidades ground-truth | **26/28 (92.9%)** | Subió desde 78.6% al corregir G2-V3 (`A12c`), G1-V4 (`A07b`), G2-V8 (`A28e`) y G5-V2 (`A28d`); ver sección 6 |
+| Cobertura vulnerabilidades ground-truth | **25/28 (89.3%)** | G4-V1 queda pendiente de validación detrás de HTTPS; G3-V4 y G6-V3 están mitigadas por la plataforma .NET 8/Kestrel |
 
 ### Tiempos de análisis complementario
 
@@ -880,11 +897,13 @@ Write-Host "Promedio B: $avgP/99 en ${avgD}ms — $qg"
 
 > **Anomalía Run 1 Escenario A (25 vs 35):** efecto warm-up — la API no terminó de inicializar SQLite al comenzar la primera ejecución. Los runs 2 y 3 son representativos. En el pipeline se documentan como `stableRuns` en `scenarioA-stats.json`.
 
-### Resultados históricos de referencia (2026-09-23, 10 runs por escenario)
+### Resultados de la serie actual (2026-09-25, 10 runs por escenario)
 
-Ejecución reproducida con los scripts [reports/Run-ScenarioA-10x.ps1](reports/Run-ScenarioA-10x.ps1) y [reports/Run-ScenarioB-10x.ps1](reports/Run-ScenarioB-10x.ps1). En cada corrida se reinició la API y se limpió su base de datos para evitar contaminación de estado. Los 20 TRX fuente están en [TestResults/](TestResults). La variación se calculó como mínimo–máximo, desviación estándar muestral y coeficiente de variación ($CV = 100 \times s / \bar{x}$).
+Ejecución reproducida con los scripts [reports/Run-ScenarioA-10x.ps1](reports/Run-ScenarioA-10x.ps1) y [reports/Run-ScenarioB-10x.ps1](reports/Run-ScenarioB-10x.ps1), con reinicio de la API y limpieza de la base de datos antes de cada corrida para evitar contaminación de estado. Los 20 TRX fuente están en [TestResults/](TestResults). La variación se calculó como media y desviación estándar muestral.
 
-| Escenario | Corridas | Resultado por corrida | Total acumulado | Duración prom. | Variación de duración | Ratio |
-|-----------|:--------:|:---------------------:|:---------------:|---------------:|-----------------------|------:|
-| A — Vulnerable | 10 | 45/101 | 450/1010 | 19,652.23 ms | 19,608.06–19,698.45 ms; DE 23.53 ms; CV 0.12% | — |
-| B — Parcheada | 10 | 97/101 | 970/1010 | 589.12 ms | 565.72–611.53 ms; DE 15.90 ms; CV 2.70% | 33.4× más rápido |
+| Escenario | Corridas | Resultado por corrida | Media por corrida | Duración prom. | DE de duración | Ratio |
+|-----------|:--------:|:---------------------:|:-----------------:|---------------:|-----------------------|------:|
+| A — Vulnerable | 10 | 39–45/101 aplicables | **42.60/101 = 42.18%** | **16,587.92 ms** | **2,755.84 ms** | — |
+| B — Parcheada | 10 | 99/101 aplicables en todas las corridas | **99.00/101 = 98.02%** | **652.11 ms** | **27.43 ms** | **25.4× más rápido** |
+
+> La serie real del 2026-09-25 se usa como referencia vigente del proyecto. El valor puntual de una sola ejecución puede diferir ligeramente del promedio de 10 corridas, pero la media y la desviación estándar de la serie certifican la estabilidad del comportamiento observado.

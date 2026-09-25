@@ -1,0 +1,180 @@
+Compilaci├│n iniciada a las 25/09/2026 1:45:52 a.┬ám..
+Serie de pruebas para C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\bin\Debug\net8.0\SecurityAsserts.dll (.NETCoreApp,Version=v8.0)
+Herramienta de l├¡nea de comandos de ejecuci├│n de pruebas de Microsoft(R), versi├│n 17.10.0 (x64)
+Copyright (c) Microsoft Corporation. Todos los derechos reservados.
+
+Iniciando la ejecuci├│n de pruebas, espere...
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.8+bd6d97b49a (64-bit .NET 8.0.31)
+[xUnit.net 00:00:00.04]   Discovering: SecurityAsserts
+[xUnit.net 00:00:00.09]   Discovered:  SecurityAsserts
+[xUnit.net 00:00:00.09]   Starting:    SecurityAsserts
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_TLS_Asserts.C02_TLS_MinimumVersion_ShouldBeTls12 [3 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_ErrorInfo_Asserts.A12b_ErrorInfo_NotFoundRoute_ShouldNotExposeInternalDetails [64 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_InputLimits_Asserts.B10_InputSize_OversizedJsonPayload_ShouldReturn413Or400 [64 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_DebugInfo_Asserts.A16c_DebugInfo_ShouldNotExposeEnvironmentVariables [64 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_CORS_Asserts.B06b_CORS_AllowCredentials_WithWildcardOrigin_ShouldNotBePresent [64 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C05_HttpMethod_DisallowedVerb_ShouldReturn405(method: "TRACE", path: "/api/v2/users") [64 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookHmac_Asserts.A26c_Webhook_ResponseShouldNotEchoPayloadBack [70 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SensitiveLogs_Asserts.A28e_WebhookPayloadShouldLeakIntoApplicationLogsOnVulnerableApi [70 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_TLS_Asserts.C01_HSTS_StrictTransportSecurity_ShouldBePresent [64 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_TLS_Asserts.A10_TLS_HttpRequest_ShouldRedirectToHttps [< 1 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15c_SSRF_ResponseShouldNotContainInternalNetworkData [72 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A23_OpenRedirect_ExternalUrl_ShouldReturn400(returnUrl: "%2f%2fevil.example.com/", description: "encoded external") [73 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C05_HttpMethod_DisallowedVerb_ShouldReturn405(method: "PUT", path: "/api/v2/auth/login") [10 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_TLS_Asserts.C03_DotNetVersion_ShouldNotBeExposedInHeaders [7 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_CORS_Asserts.B06_CORS_AllowOriginWildcard_ShouldNotBePresent [10 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_DebugInfo_Asserts.A16b_DebugInfo_ShouldNotExposeConnectionString [11 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookHmac_Asserts.A26_Webhook_WithoutHmacSignature_ShouldReturn401 [9 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C05_HttpMethod_DisallowedVerb_ShouldReturn405(method: "DELETE", path: "/api/v2/auth/login") [2 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A23_OpenRedirect_ExternalUrl_ShouldReturn400(returnUrl: "https://evil.example.com/phishing", description: "dominio externo") [6 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_ReDoS_Asserts.A25_ReDoS_CatastrophicPattern_ShouldRespondWithin2Seconds(pattern: "(a|aa)+", input: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", description: "alternaci├│n con overlap") [81 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A11_Auth_AlgNoneToken_ShouldReturn401 [84 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C05_HttpMethod_DisallowedVerb_ShouldReturn405(method: "PATCH", path: "/api/v2/auth/login") [5 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_DebugInfo_Asserts.A16_DebugInfo_WithoutAuth_ShouldReturn401Or404 [6 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A23_OpenRedirect_ExternalUrl_ShouldReturn400(returnUrl: "https://attacker.io/steal-token", description: "dominio atacante") [6 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_ReDoS_Asserts.A25_ReDoS_CatastrophicPattern_ShouldRespondWithin2Seconds(pattern: "(a+)+", input: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", description: "backtracking exponencial") [4 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C06_HealthCheck_ShouldBePublicAndReturn200 [4 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A23_OpenRedirect_ExternalUrl_ShouldReturn400(returnUrl: "//evil.example.com/", description: "protocol-relative") [3 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_ReDoS_Asserts.A25_ReDoS_CatastrophicPattern_ShouldRespondWithin2Seconds(pattern: "([a-zA-Z]+)*", input: "aaaaaaaaaaaaaaaaaaaaaaaaaa!", description: "cuantificador nested") [4 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookHmac_Asserts.A26b_Webhook_WithInvalidHmacSignature_ShouldReturn401 [11 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15b_SSRF_PingEndpointRequiresAuthentication [18 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_InputLimits_Asserts.B11_ContentType_LoginWithWrongContentType_ShouldReturn415 [23 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_DebugInfo_Asserts.A16d_HealthVerbose_ShouldNotExposeRuntimeVersion [6 ms]
+  Correctas SecurityAsserts.Grupo4_Infraestructura.G4_API_Asserts.C04_ApiVersion_V1Route_ShouldReturnDeprecationHeader [6 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403(url: "http://169.254.169.254/latest/", description: "AWS metadata") [5 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_InputLimits_Asserts.B11b_ContentType_LoginWithXmlBody_ShouldReturn415 [5 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_OpenRedirect_Asserts.A23b_OpenRedirect_RelativeUrl_ShouldBeAllowed [7 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_ReDoS_Asserts.A25b_ReDoS_InvalidPattern_ShouldReturn400NotCrash [7 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403(url: "file:///C:/Windows/win.ini", description: "file scheme") [3 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_InputLimits_Asserts.B10b_InputSize_OversizedQueryString_ShouldReturn414Or400 [3 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403(url: "http://127.0.0.1:5985/", description: "loopback WinRM") [2 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_ErrorInfo_Asserts.A12c_ErrorInfo_UnhandledSqlException_ShouldNotExposeStackTrace [36 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_XSS_Asserts.A09b_XSS_ContentTypeHeader_ShouldBeApplicationJson [105 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SSRF_Asserts.A15_SSRF_PrivateRangeUrl_ShouldReturn400Or403(url: "http://192.168.1.1/", description: "RFC 1918") [2 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_HeaderInjection_Asserts.A24_HeaderInjection_CrlfInQuery_ShouldNotInjectHeaders(query: "test%0dX-Injected:%20yes", description: "CR solo") [106 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_ErrorInfo_Asserts.A12_ErrorInfo_InvalidRequest_ShouldNotExposeStackTrace [3 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_XSS_Asserts.A09_XSS_CategoryPayload_ShouldNotReflectScriptInBody [3 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_SQLi_Asserts.A08_SQLi_SearchWithOrPayload_ShouldNotReturnAllRecords [109 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_HeaderInjection_Asserts.A24_HeaderInjection_CrlfInQuery_ShouldNotInjectHeaders(query: "test%0aX-Injected:%20yes", description: "LF solo") [2 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_SQLi_Asserts.A08b_SQLi_UnionPayload_ShouldNotReturn500OrLeakData [3 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_HeaderInjection_Asserts.A24_HeaderInjection_CrlfInQuery_ShouldNotInjectHeaders(query: "test%0d%0aSet-Cookie:%20session=evil", description: "CRLF URL-encoded") [2 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_HeaderInjection_Asserts.A24_HeaderInjection_CrlfInQuery_ShouldNotInjectHeaders(query: "test\r\nSet-Cookie: session=evil", description: "CRLF directo") [2 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_HeaderInjection_Asserts.A24b_HeaderInjection_NormalQuery_ShouldWork [3 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SensitiveLogs_Asserts.A28d_LoginCredentialsShouldLeakIntoApplicationLogsOnVulnerableApi [56 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_BFLA_Asserts.A06_BFLA_UserRoleCannotDeleteOtherUser_ShouldReturn403 [138 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13b_PathTraversal_EncodedPayloads_ShouldNotReturn200(payload: "../../appsettings.json") [139 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_BOLA_Asserts.A01_BOLA_GetUser_UserAAccessingUserBProfile_ShouldReturn403Or404 [141 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_XXE_Asserts.A22_XXE_LocalFileEntity_ShouldBeRejected [141 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27_WebhookSsrf_PrivateCallbackUrl_ShouldReturn400(callbackUrl: "http://10.0.0.1/", description: "RFC 1918 clase A") [142 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_JWTQueryString_Asserts.A17b_JWT_TokenInQueryString_AuthHeaderStillWorks [148 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_SensitiveData_Asserts.A18_SensitiveData_GetUser_ShouldNotExposePassword [148 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_IDOR_Asserts.A20_IDOR_EnumerateUsers_ShouldReturn403NotMixOf200And404 [152 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SensitiveLogs_Asserts.A28b_SensitiveLog_LoginResponseShouldNotReturnPassword [40 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B04_Headers_ServerHeader_ShouldNotExposeVersion [167 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A03_Auth_BruteForce_MultipleFailedLogins_ShouldReturn429Or401 [84 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A14b_FileUpload_OversizedFile_ShouldReturn413 [178 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A07_Auth_ExpiredToken_ShouldReturn401 [11 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SensitiveLogs_Asserts.A28c_SensitiveLog_ErrorResponseShouldNotContainCredentials [13 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_MassAssignment_Asserts.A05_MassAssignment_UserCannotElevateOwnRole_ShouldNotPersistAdminRole [180 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27_WebhookSsrf_PrivateCallbackUrl_ShouldReturn400(callbackUrl: "http://127.0.0.1:5985/wsman", description: "loopback WinRM") [39 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_BFLA_Asserts.A06b_BFLA_UserRoleCannotPromoteOtherUser_ShouldReturn403 [42 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13b_PathTraversal_EncodedPayloads_ShouldNotReturn200(payload: "..%2F..%2Fappsettings.json") [42 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_XXE_Asserts.A22b_XXE_LocalFileEntity_ResponseShouldNotContainFileContent [40 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_IDOR_Asserts.A19_IDOR_UpdateOtherUserProfile_ShouldReturn403 [29 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B03_Headers_ContentSecurityPolicy_ShouldBePresent [15 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_JWTQueryString_Asserts.A17_JWT_TokenInQueryString_ShouldNotGrantAccess [36 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A04_Auth_ProtectedEndpoint_WithoutToken_ShouldReturn401 [5 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_SensitiveData_Asserts.A18b_SensitiveData_GetMe_ShouldNotExposePasswordOrInternalFields [37 ms]
+  Correctas SecurityAsserts.Grupo5_Servidor.G5_SensitiveLogs_Asserts.A28_SensitiveLog_WebhookResponseShouldNotReflectPayload [5 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27_WebhookSsrf_PrivateCallbackUrl_ShouldReturn400(callbackUrl: "http://192.168.1.1/admin", description: "RFC 1918") [5 ms]
+  Correctas SecurityAsserts.Grupo7_Reportes.G7_XXE_Asserts.A22c_XXE_SsrfViaXml_ShouldNotLeakCloudMetadata [5 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_IDOR_Asserts.A21_IDOR_DeleteOtherUserOrder_ShouldReturn403Or404 [5 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13b_PathTraversal_EncodedPayloads_ShouldNotReturn200(payload: "%2e%2e/%2e%2e/appsettings.json") [6 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B01_Headers_XContentTypeOptions_ShouldBeNoSniff [5 ms]
+[xUnit.net 00:00:00.31]     SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B08_Pagination_ProductsEndpoint_ShouldReturnPaginatedResponse [FAIL]
+[xUnit.net 00:00:00.31]       Expected hasMetadata to be true because B08 ÔÇö El endpoint GET /products debe implementar paginaci├│n (cabecera o body metadata), but found False.
+[xUnit.net 00:00:00.31]       Stack Trace:
+[xUnit.net 00:00:00.31]            at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+[xUnit.net 00:00:00.31]            at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+[xUnit.net 00:00:00.31]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.31]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.31]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.31]            at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+[xUnit.net 00:00:00.31]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.31]         C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\Grupo2_Configuracion\G2_Misc_Asserts.cs(94,0): at SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B08_Pagination_ProductsEndpoint_ShouldReturnPaginatedResponse()
+[xUnit.net 00:00:00.31]         --- End of stack trace from previous location ---
+  Con error SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B08_Pagination_ProductsEndpoint_ShouldReturnPaginatedResponse [188 ms]
+  Mensaje de error:
+   Expected hasMetadata to be true because B08 ÔÇö El endpoint GET /products debe implementar paginaci├│n (cabecera o body metadata), but found False.
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B08_Pagination_ProductsEndpoint_ShouldReturnPaginatedResponse() in C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\Grupo2_Configuracion\G2_Misc_Asserts.cs:line 94
+--- End of stack trace from previous location ---
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27_WebhookSsrf_PrivateCallbackUrl_ShouldReturn400(callbackUrl: "file:///C:/Windows/win.ini", description: "file scheme") [4 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A14_FileUpload_ExecutableExtension_ShouldReturn400Or415(fileName: "shell.ps1", content: "Invoke-Expression (New-Object Net.WebClient).Downl"┬À┬À┬À) [13 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_SensitiveData_Asserts.A18c_SensitiveData_AdminEndpoint_ShouldNotReturnPasswordsInBulk [11 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27_WebhookSsrf_PrivateCallbackUrl_ShouldReturn400(callbackUrl: "http://169.254.169.254/latest/meta-data/", description: "AWS metadata") [5 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13c_PathTraversal_ConfigFile_ShouldNotExposeContent [8 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A14_FileUpload_ExecutableExtension_ShouldReturn400Or415(fileName: "cmd.bat", content: "@echo off & del /f /q C:\\Windows\\System32") [5 ms]
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B02_Headers_XFrameOptions_ShouldBeDenyOrSameOrigin [8 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_Auth_Asserts.A07b_Auth_RealTokenReSignedWithPastExp_ShouldReturn401 [16 ms]
+  Correctas SecurityAsserts.Grupo1_ControlAcceso.G1_BOLA_Asserts.A02_BOLA_GetOrder_UserAAccessingUserBOrder_ShouldReturn403Or404 [61 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27_WebhookSsrf_PrivateCallbackUrl_ShouldReturn400(callbackUrl: "http://172.16.0.1/", description: "RFC 1918 clase B") [6 ms]
+  Correctas SecurityAsserts.Grupo3_Inyeccion.G3_PathTraversal_Asserts.A13_PathTraversal_DownloadOutsideBaseDir_ShouldReturn400Or403 [5 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A14_FileUpload_ExecutableExtension_ShouldReturn400Or415(fileName: "backdoor.aspx", content: "<%@ Page Language=\"C#\" %>") [5 ms]
+[xUnit.net 00:00:00.33]     SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B09_RateLimit_AuthEndpoint_ShouldReturn429AfterExcessRequests [FAIL]
+[xUnit.net 00:00:00.33]       Expected got429 to be true because B09 ÔÇö El endpoint de login debe retornar 429 tras exceder el l├¡mite de peticiones, but found False.
+[xUnit.net 00:00:00.33]       Stack Trace:
+[xUnit.net 00:00:00.33]            at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+[xUnit.net 00:00:00.33]            at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+[xUnit.net 00:00:00.34]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.34]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.34]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.34]            at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+[xUnit.net 00:00:00.34]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.34]         C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\Grupo2_Configuracion\G2_Misc_Asserts.cs(144,0): at SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B09_RateLimit_AuthEndpoint_ShouldReturn429AfterExcessRequests()
+[xUnit.net 00:00:00.34]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.34]   Finished:    SecurityAsserts
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_Headers_Asserts.B05_Headers_XPoweredBy_ShouldNotBePresent [6 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27c_WebhookRegister_RequiresAuthentication [2 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A14_FileUpload_ExecutableExtension_ShouldReturn400Or415(fileName: "malware.exe", content: "MZ┬É\0\x03") [3 ms]
+  Correctas SecurityAsserts.Grupo8_Webhooks.G8_WebhookSsrf_Asserts.A27b_WebhookSsrf_LoopbackUrl_ResponseShouldNotLeakInternalData [3 ms]
+  Correctas SecurityAsserts.Grupo6_Archivos.G6_FileUpload_Asserts.A14c_FileUpload_TraversalInFileName_ShouldNotSaveOutsideBaseDir [3 ms]
+  Con error SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B09_RateLimit_AuthEndpoint_ShouldReturn429AfterExcessRequests [29 ms]
+  Mensaje de error:
+   Expected got429 to be true because B09 ÔÇö El endpoint de login debe retornar 429 tras exceder el l├¡mite de peticiones, but found False.
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B09_RateLimit_AuthEndpoint_ShouldReturn429AfterExcessRequests() in C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\Grupo2_Configuracion\G2_Misc_Asserts.cs:line 144
+--- End of stack trace from previous location ---
+  Correctas SecurityAsserts.Grupo2_Configuracion.G2_Misc_Asserts.B07_Swagger_ShouldNotBeAccessibleInProduction [2 ms]
+Archivo de resultados: C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\TestResults\ScenarioB_Run9_2026-09-25.trx
+
+No se pudo ejecutar la serie de pruebas.
+Pruebas totales: 103
+     Correcto: 101
+     Incorrecto: 2
+ Tiempo total: 0,6207 Segundos
+     1>Proyecto "C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\SecurityAsserts.csproj" en el nodo 1 (VSTest destinos).
+     1>_VSTestConsole:
+         MSB4181: La tarea "VSTestTask" devolvi├│ false, pero no registr├│ un error.
+     1>Compilaci├│n del proyecto terminada "C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\SecurityAsserts.csproj" (VSTest destinos) -- ERROR.
+
+ERROR al compilar.
+    0 Advertencia(s)
+    0 Errores
+
+Tiempo transcurrido 00:00:01.08

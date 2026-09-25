@@ -1,17 +1,19 @@
 <#
-    Cuenta resultados Passed/Failed por ID de assert (trait "Assert") a partir de los TRX
+    Cuenta resultados Passed/Failed/Skipped por ID de assert (trait "Assert") a partir de los TRX
     en TestResults/, agrupando por escenario (A/B). El ID se deriva del nombre del método
     de test (p. ej. "A15_SSRF_..." -> "A15"), que es 1:1 con [Trait("Assert","A15")].
     Uso: pwsh reports/Get-AssertCountsFromTrx.ps1 -Fecha 2026-09-23
+    Para una serie ejecutada detrás de HTTPS: añadir -TlsChecksApplicable
 #>
 param(
-    [string]$Fecha = "2026-05-15"
+    [string]$Fecha = "2026-05-15",
+    [switch]$TlsChecksApplicable
 )
 
 $resultsDir = Join-Path $PSScriptRoot "..\TestResults"
 $trxFiles = Get-ChildItem $resultsDir -Filter "Scenario*_$Fecha.trx"
 
-# assertId -> @{ A = @{Passed=0;Failed=0}; B = @{Passed=0;Failed=0} }
+# assertId -> @{ A = @{Passed=0;Failed=0;Skipped=0}; B = @{Passed=0;Failed=0;Skipped=0} }
 $counts = @{}
 
 foreach ($file in $trxFiles) {
@@ -35,11 +37,19 @@ foreach ($file in $trxFiles) {
 
         $assertId = ($methodName -split "_")[0]
         if (-not $counts.ContainsKey($assertId)) {
-            $counts[$assertId] = @{ A = @{ Passed = 0; Failed = 0 }; B = @{ Passed = 0; Failed = 0 } }
+            $counts[$assertId] = @{ A = @{ Passed = 0; Failed = 0; Skipped = 0 }; B = @{ Passed = 0; Failed = 0; Skipped = 0 } }
+        }
+
+        # A10/C02 retornan temprano en el laboratorio HTTP local: no hay TLS que validar.
+        if (-not $TlsChecksApplicable -and $assertId -in @("A10", "C02")) {
+            $counts[$assertId][$scenario].Skipped++
+            continue
         }
 
         if ($res.outcome -eq "Passed") {
             $counts[$assertId][$scenario].Passed++
+        } elseif ($res.outcome -in @("Skipped", "NotExecuted")) {
+            $counts[$assertId][$scenario].Skipped++
         } else {
             $counts[$assertId][$scenario].Failed++
         }
@@ -53,10 +63,12 @@ $rows = foreach ($id in ($counts.Keys | Sort-Object)) {
         Assert     = $id
         A_Passed   = $a.Passed
         A_Failed   = $a.Failed
-        A_Total    = $a.Passed + $a.Failed
+        A_Skipped  = $a.Skipped
+        A_Total    = $a.Passed + $a.Failed + $a.Skipped
         B_Passed   = $b.Passed
         B_Failed   = $b.Failed
-        B_Total    = $b.Passed + $b.Failed
+        B_Skipped  = $b.Skipped
+        B_Total    = $b.Passed + $b.Failed + $b.Skipped
     }
 }
 

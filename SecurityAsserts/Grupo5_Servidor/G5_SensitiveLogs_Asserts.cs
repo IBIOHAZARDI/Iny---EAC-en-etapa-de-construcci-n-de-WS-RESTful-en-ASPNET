@@ -40,7 +40,32 @@ public class G5_SensitiveLogs_Asserts
         if (!File.Exists(path))
             return string.Empty;
 
-        return File.ReadAllText(path);
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var start = Math.Max(0, stream.Length - 1024 * 1024);
+            stream.Seek(start, SeekOrigin.Begin);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+        catch (IOException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static async Task<bool> LogContainsAsync(string firstMarker, string secondMarker)
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            var logText = ReadLogTail();
+            if (logText.Contains(firstMarker) && logText.Contains(secondMarker))
+                return true;
+
+            await Task.Delay(50);
+        }
+
+        return false;
     }
 
     [Fact]
@@ -136,8 +161,7 @@ public class G5_SensitiveLogs_Asserts
             new[] { HttpStatusCode.OK, HttpStatusCode.Unauthorized },
             because: "A28d — El login puede fallar si la contraseña no se reconoce; lo importante es verificar si se registra en logs");
 
-        var logText = ReadLogTail();
-        var hasLeak = logText.Contains(TestConfig.UserAEmail) && logText.Contains(uniquePassword);
+        var hasLeak = await LogContainsAsync(TestConfig.UserAEmail, uniquePassword);
 
         if (TestConfig.BaseUrl.Contains("5002"))
         {
@@ -172,8 +196,7 @@ public class G5_SensitiveLogs_Asserts
 
         body.Should().NotBeNullOrEmpty();
 
-        var logText = ReadLogTail();
-        var hasLeak = logText.Contains(marker) && logText.Contains(secret);
+        var hasLeak = await LogContainsAsync(marker, secret);
 
         if (TestConfig.BaseUrl.Contains("5002"))
         {
