@@ -1,0 +1,50 @@
+{
+  "apiVersion": "azure-devops-branch-policy-config/v1",
+  "branch": "refs/heads/main",
+  "pipeline": {
+    "yamlPath": "/azure-pipelines.yml",
+    "definitionId": null
+  },
+  "policies": [
+    {
+      "name": "Minimum required reviewers",
+      "typeId": "fa4e907d-c16b-4a4c-9dfa-4906e5d171dd",
+      "isEnabled": true,
+      "isBlocking": true,
+      "settings": {
+        "minimumApproverCount": 1,
+        "creatorVoteCounts": false,
+        "allowDownvotes": false,
+        "resetOnSourcePush": true,
+        "scope": [
+          {
+            "refName": "refs/heads/main",
+            "matchKind": "Exact"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Build validation",
+      "typeId": "0609b952-1397-4640-95ec-e00a01b2c241",
+      "isEnabled": true,
+      "isBlocking": true,
+      "pipelineDefinitionId": null,
+      "pipelineYamlPath": "/azure-pipelines.yml",
+      "settings": {
+        "queueOnSourceUpdateOnly": true,
+        "manualQueueOnly": false,
+        "validDuration": 0,
+        "filenamePatterns": [
+          "*"
+        ],
+        "scope": [
+          {
+            "refName": "refs/heads/main",
+            "matchKind": "Exact"
+          }
+        ]
+      }
+    }
+  ]
+}
