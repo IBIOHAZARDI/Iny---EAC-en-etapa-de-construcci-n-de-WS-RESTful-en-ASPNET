@@ -34,35 +34,40 @@ public class G5_SensitiveLogs_Asserts
         return Path.Combine(root, "logs", "app.log");
     }
 
-    private static string ReadLogTail()
+    // Busca ambos marcadores en la misma línea recorriendo el archivo por líneas: una ventana fija de
+    // bytes fallaba cuando A14 escribía una línea de 2 MB que desplazaba la entrada buscada.
+    private static bool LogLineContains(string firstMarker, string secondMarker)
     {
         var path = GetTargetLogPath();
         if (!File.Exists(path))
-            return string.Empty;
+            return false;
 
         try
         {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            var start = Math.Max(0, stream.Length - 1024 * 1024);
-            stream.Seek(start, SeekOrigin.Begin);
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
+            string? line;
+            while ((line = reader.ReadLine()) is not null)
+            {
+                if (line.Contains(firstMarker) && line.Contains(secondMarker))
+                    return true;
+            }
         }
         catch (IOException)
         {
-            return string.Empty;
         }
+
+        return false;
     }
 
     private static async Task<bool> LogContainsAsync(string firstMarker, string secondMarker)
     {
         for (var attempt = 0; attempt < 20; attempt++)
         {
-            var logText = ReadLogTail();
-            if (logText.Contains(firstMarker) && logText.Contains(secondMarker))
+            if (LogLineContains(firstMarker, secondMarker))
                 return true;
 
-            await Task.Delay(50);
+            await Task.Delay(100);
         }
 
         return false;

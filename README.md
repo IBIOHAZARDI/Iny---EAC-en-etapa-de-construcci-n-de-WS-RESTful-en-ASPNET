@@ -2,14 +2,26 @@
 
 Proyecto xUnit con **77 asserts** (103 test cases ejecutados en la validación actual) organizados en 8 grupos que validan la postura de seguridad de la API contra el OWASP API Security Top 10 2023. Se ejecuta en dos escenarios comparativos:
 
-> **Verificación ejecutada (2026-09-25):** se validó la serie real de 10 corridas independientes en ambos escenarios contra las APIs locales.
-> Resultado comparativo verificado sobre la serie 2026-09-25:
-> - **Escenario A — Vulnerable:** promedio **42.60/101 = 42.18%** de controles aplicables aprobados; 2 controles TLS omitidos; duración media **16,587.92 ms**; DE **2,755.84 ms**.
-> - **Escenario B — Parcheada / no vulnerable:** promedio **99.00/101 = 98.02%** de controles aplicables aprobados; 2 controles TLS omitidos; duración media **652.11 ms**; DE **27.43 ms**.
+> **Verificación ejecutada (2026-10-18, laboratorio con HTTPS):** se validó una nueva serie de 10 corridas independientes en ambos escenarios. A diferencia de la serie 2026-09-25 (HTTP local sin terminador TLS, A10/C02 no aplicables), **esta serie ejecuta los 103 test cases con HTTPS habilitado** (certificado de desarrollo de ASP.NET Core), por lo que el denominador vuelve a ser **103** y A10, C01 y C02 son aplicables.
+> - **Escenario A — Vulnerable:** promedio **47.00/103 = 45.63%** de test cases aprobados (47 en las 10 corridas); duración media de la corrida **20,629.6 ms**; DE **449.20 ms**.
+> - **Escenario B — Parcheada / no vulnerable:** **101/103 = 98.06%** en las 10 corridas (DE 0.00 pp); duración media de la corrida **2,762.62 ms**; DE **17.42 ms**.
+>
+> **Configuración real del laboratorio (aclaración):** las series anteriores (2026-09-23/25) corrieron en HTTP puro (`http://localhost:5000` y `:5002`) y por eso A10/C02 se marcaron como no aplicables y G4-V1 como pendiente. El ambiente **no** pasó a "aceptar solo HTTPS" entre series: la serie 2026-10-18 habilita HTTPS de forma explícita (ver [Laboratorio HTTPS](#laboratorio-https)). Las duraciones de ambas series no son comparables (ahora es el tiempo total de la corrida del TRX e incluye el handshake TLS).
 >
 > Las dos pruebas no superadas en el escenario parcheado son **B08** (paginación de `/products`) y **B09** (rate limiting en login), pendientes de hardening funcional en la API parcheada; el resto de la suite queda con comportamiento correcto.
 >
-> La evidencia actual del 2026-09-25 reemplaza la referencia histórica anterior y se mantiene consistente con los 20 TRX generados para la serie de 10 corridas por escenario.
+> La evidencia actual del 2026-10-18 reemplaza a la serie 2026-09-25 y es consistente con los 20 TRX generados (`TestResults/Scenario*_Run*_2026-10-18.trx`) y con `reports/AssertCounts_TRX_2026-10-18.csv`.
+
+### Laboratorio HTTPS
+
+Se usa el certificado de desarrollo de ASP.NET Core (`dotnet dev-certs https`); las pruebas aceptan ese certificado solo para hosts loopback.
+
+| Escenario | `TEST_API_URL` (base) | Otras variables | Comportamiento esperado |
+|-----------|----------------------|-----------------|-------------------------|
+| **A — Vulnerable** | `http://localhost:5000` | `TEST_API_HTTPS_URL=https://localhost:5001` | Escucha en HTTP y HTTPS; **sin** redirección ni HSTS → A10 y C01 fallan (G4-V1 detectada), C02 pasa |
+| **B — Parcheada** | `https://localhost:5002` | `TEST_API_HTTP_URL=http://localhost:5003` | HTTPS en 5002; HTTP en 5003 solo redirige (307) y envía HSTS → A10, C01 y C02 pasan |
+
+Si no se define un endpoint HTTP (A10) o HTTPS (C01/C02), el assert retorna sin evaluar (no aplicable).
 
 | Escenario | Target | Puerto | Objetivo |
 |-----------|--------|--------|---------|
@@ -21,7 +33,7 @@ El pipeline de Azure DevOps ([azure-pipelines.yml](azure-pipelines.yml)) integra
 > **Prerrequisitos:**
 > - La API objetivo debe estar corriendo en su puerto antes de ejecutar los asserts.
 > - **Compilar y ejecutar siempre desde la carpeta `Inyector/`** — `Inyector/global.json` fija el SDK a `8.0.319` y evita errores `CS1744` con SDK 9.
-> - El agente self-hosted `Default` debe tener Docker, una conexión de servicio de SonarQube llamada `SonarQube` y acceso a las APIs en los puertos `5000` y `5002`.
+> - El agente self-hosted `Default` debe tener Docker, una conexión de servicio de SonarQube llamada `SonarQube` y acceso a las APIs en los puertos `5000`/`5001` (A) y `5002`/`5003` (B), con el certificado de desarrollo HTTPS instalado.
 
 ---
 
@@ -43,26 +55,26 @@ El pipeline de Azure DevOps ([azure-pipelines.yml](azure-pipelines.yml)) integra
 
 ### Veredicto actualizado
 
-La validación ejecutada el **2026-09-25** confirma la diferencia clara entre la API vulnerable y la versión parcheada basada en la serie real de 10 corridas por escenario:
+La validación ejecutada el **2026-10-18** (103 test cases, con HTTPS) confirma la diferencia clara entre la API vulnerable y la versión parcheada basada en la serie real de 10 corridas por escenario:
 
-- **Escenario A — Vulnerable:** promedio **42.60/101 = 42.18%** de controles aplicables aprobados; duración promedio **16,587.92 ms**; desviación estándar de duración **2,755.84 ms**.
-- **Escenario B — Parcheada / no vulnerable:** promedio **99.00/101 = 98.02%** de controles aplicables aprobados; duración promedio **652.11 ms**; desviación estándar de duración **27.43 ms**.
+- **Escenario A — Vulnerable:** promedio **47.00/103 = 45.63%** de test cases aprobados.
+- **Escenario B — Parcheada / no vulnerable:** **101/103 = 98.06%** de test cases aprobados.
 - Los **2 fallos restantes** en el escenario parcheado corresponden a **B08** (paginación) y **B09** (rate limiting), que siguen siendo mejoras de hardening funcional pendientes en la API no vulnerable.
 
 ### Evidencia cuantitativa
 
 | Indicador | Resultado | Interpretación |
 |-----------|----------:|----------------|
-| Escenario A — Vulnerable | **42.60/101 = 42.18%** (media, 10 corridas; 2 TLS N/A) | La API vulnerable sigue detectándose como insegura, con fallos esperados por diseño |
-| Escenario B — Parcheada / no vulnerable | **99.00/101 = 98.02%** (media, 10 corridas; 2 TLS N/A) | La versión corregida cumple la gran mayoría de los controles aplicables |
-| DE del ratio en Escenario A | **1.94 pp** | La variación del resultado de seguridad entre corridas debe interpretarse junto con los fallos de evidencia de logs |
-| DE del ratio en Escenario B | **0.00 pp** | La serie parcheada es estable: 99/101 en cada una de las 10 corridas |
-| Controles pendientes en Escenario B | **2/101 (1.98%, ≈2.0%)** | Paginación y rate limiting aún requieren ajuste funcional |
+| Escenario A — Vulnerable | **47.00/103 = 45.63%** (media, 10 corridas; TLS aplicable) | La API vulnerable sigue detectándose como insegura, con fallos esperados por diseño |
+| Escenario B — Parcheada / no vulnerable | **101/103 = 98.06%** (10 corridas; TLS aplicable) | La versión corregida cumple la gran mayoría de los controles aplicables |
+| DE del ratio en Escenario A | **1.37 pp** | La variación del resultado de seguridad entre corridas debe interpretarse junto con los fallos de evidencia de logs |
+| DE del ratio en Escenario B | **0.00 pp** | La serie parcheada es estable: 101/103 en cada una de las 10 corridas |
+| Controles pendientes en Escenario B | **2/103 (1.94%, ≈1.9%)** | Paginación y rate limiting aún requieren ajuste funcional |
 
 ### Interpretación
 
 - El proyecto sigue siendo un caso de estudio de seguridad orientado a demostrar detección y hardening real, no un servicio productivo.
-- La versión parcheada cumple la mayoría de controles aplicables con un resultado de **98.02%**, claramente superior al escenario vulnerable.
+- La versión parcheada cumple la mayoría de controles aplicables con un resultado de **98.06%**, claramente superior al escenario vulnerable.
 - El Escenario A sigue siendo **bloqueante por diseño**: su objetivo es confirmar que la API vulnerable presenta fallos de seguridad significativos, no aprobar despliegue.
 - La diferencia observada es coherente con la expectativa del ejercicio: la API vulnerable debe fallar y la parcheada debe superar casi toda la validación, con excepciones funcionales claramente identificadas.
 
@@ -76,7 +88,7 @@ El resultado indica que:
 
 ### Conclusión ejecutiva
 
-> El proyecto queda **aprobado como caso de estudio de seguridad y validación de controles**, con la serie real de 10 corridas del **2026-09-25**: Escenario A promedia **42.60/101 = 42.18%** y Escenario B promedia **99.00/101 = 98.02%** de controles aplicables. La versión vulnerable sigue siendo **bloqueante por diseño** y no representa un despliegue aceptable, pero la versión parcheada cumple la gran mayoría de los controles; los dos fallos restantes son paginación y rate limiting, y A10/C02 quedan fuera por falta de HTTPS en el laboratorio.
+> El proyecto queda **aprobado como caso de estudio de seguridad y validación de controles**, con la serie real de 10 corridas del **2026-10-18**: Escenario A promedia **47.00/103 = 45.63%** y Escenario B obtiene **101/103 = 98.06%** de test cases. La versión vulnerable sigue siendo **bloqueante por diseño** y no representa un despliegue aceptable, pero la versión parcheada cumple la gran mayoría de los controles; los dos fallos restantes son paginación y rate limiting, y A10/C01/C02 ya se validan con HTTPS en el laboratorio.
 
 ---
 
@@ -162,7 +174,7 @@ La URL base se lee de la variable de entorno `TEST_API_URL` por `Configuration/T
 $env:TEST_API_URL = "http://localhost:5000"
 
 # Escenario B — VulnerableApi_Patched
-$env:TEST_API_URL = "http://localhost:5002"
+$env:TEST_API_URL = "https://localhost:5002"; $env:TEST_API_HTTP_URL = "http://localhost:5003"
 ```
 
 También se puede pasar directamente a `dotnet test` sin modificar la variable de entorno de la sesión:
@@ -170,7 +182,7 @@ También se puede pasar directamente a `dotnet test` sin modificar la variable d
 ```powershell
 # Pasar TEST_API_URL directamente (forma usada por el pipeline de Azure DevOps)
 dotnet test "SecurityAsserts/SecurityAsserts.csproj" --no-build `
-    -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000"
+    -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000" RunConfiguration.EnvironmentVariables.TEST_API_HTTPS_URL="https://localhost:5001"
 ```
 
 > **No usar `API_BASE_URL`:** `TestConfig.cs` lee exclusivamente `TEST_API_URL`. Cualquier otra variable es ignorada.
@@ -206,7 +218,7 @@ try {
 ```powershell
 # Desde Inyector/ (global.json activo)
 Set-Location "C:\Trabajo\Universidad\Inyector"
-$env:TEST_API_URL = "http://localhost:5000"   # o :5002 para Escenario B
+$env:TEST_API_URL = "http://localhost:5000"   # Escenario B: https://localhost:5002 + TEST_API_HTTP_URL=http://localhost:5003
 
 dotnet test "SecurityAsserts/SecurityAsserts.csproj" `
     --no-build `
@@ -304,7 +316,7 @@ dotnet test "SecurityAsserts/SecurityAsserts.csproj" `
     --configuration Debug `
     --logger "trx;LogFileName=ScenarioA_Run1_${fecha}.trx" `
     --results-directory "C:\Trabajo\Universidad\Resultados\TestResults" `
-    -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000"
+    -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000" RunConfiguration.EnvironmentVariables.TEST_API_HTTPS_URL="https://localhost:5001"
 
 # Ver resumen del TRX
 $trxPath = "C:\Trabajo\Universidad\Resultados\TestResults\ScenarioA_Run1_${fecha}.trx"
@@ -416,7 +428,7 @@ dotnet test "SecurityAsserts/SecurityAsserts.csproj" `
     --no-build --configuration Debug `
     --logger "trx;LogFileName=gate-check.trx" `
     --results-directory $env:TEMP `
-    -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000"
+    -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000" RunConfiguration.EnvironmentVariables.TEST_API_HTTPS_URL="https://localhost:5001"
 
 [xml]$x = Get-Content $tmpTrx
 $c = $x.TestRun.ResultSummary.Counters
@@ -431,9 +443,24 @@ Algunos asserts verifican controles que la `VulnerableApi` **intencionalmente no
 |--------|---------------|-------|
 | A03 | Sí | G1-V2: sin rate limiting |
 | A07b | Sí | G1-V4: JWT sin ValidateLifetime (ver A07b en sección 6) |
-| A10 | No en HTTP local | G4-V1 requiere ejecutar la prueba detrás de un terminador HTTPS |
+| A10 | Sí (HTTPS habilitado en el laboratorio) | G4-V1 se valida con `TEST_API_HTTP_URL`/`TEST_API_HTTPS_URL` (ver Laboratorio HTTPS) |
 | B01–B05 | Sí | G2-V2: sin middleware de cabeceras |
 | A12c | Sí | G2-V3: DeveloperExceptionPage expone stack trace |
+
+### Tests inestables (flaky): diagnóstico y estabilización
+
+Los IDs intermitentes de la serie 2026-09-25 (A02, A13, A13b, A13c, A17b, A21, A22c, A28d, A28e, B04, B05; en 10-18 además A19) se diagnosticaron con TRX y logs de la API. Tras las correcciones, la serie de 10 corridas del 2026-10-18 es **determinista**: A = 47/103 en las 10 corridas (0 IDs intermitentes) y B = 101/103 en las 10 corridas.
+
+| ID(s) | Causa probable (evidencia) | Acción correctiva |
+|-------|---------------------------|-------------------|
+| A02, A13, A13b, A13c, A17b, A22c, B04, B05 | Precondición de login con 500: `IOException` ("archivo en uso") en `File.AppendAllText` sobre `logs\app.log` (23 casos en el log), con escrituras concurrentes y un archivo de 126 MB. | Nuevo `AppLog.Append` (lock, escritor único, `FileShare.ReadWrite`, reintentos); `app.log` se rota al inicio de cada corrida. |
+| A28d, A28e (detectan G5-V2 y G2-V8) | (1) Mismo `IOException` (el 500 impedía escribir la entrada); (2) el lector leía solo el último 1 MB y A14 escribe una línea de ~2 MB que desplazaba las entradas; (3) las pruebas corrían en paralelo. | Lectura de `app.log` por líneas con marcadores en la misma línea y 20 reintentos × 100 ms; log rotado por corrida; ejecución serial. Resultado: 10/10 corridas con fuga detectada, base de **26/28**. |
+| A19, A01 | Estado compartido: otro test destructivo (A05/A06) borraba o alteraba al usuario B antes y la API devolvía 404 (falso negativo). | `StateAwareOrderers.cs`: pruebas de lectura primero y las mutantes al final (A19, A21 → A05 → A06b → A06). |
+| A21 | Misma dependencia de estado; además la API no expone `DELETE /orders` y responde 405, por lo que pasa siempre. | Orden determinista; el 10/10 pasa se documenta como no detectable por diseño. |
+| Todos | `xunit.runner.json` (`parallelizeTestCollections=false`) no se copiaba a `bin`, de modo que las pruebas sí corrían en paralelo. | `CopyToOutputDirectory` en el csproj y `[assembly: CollectionBehavior(DisableTestParallelization = true)]`. |
+| C02 | Timeout puntual (~4 s) del handshake TLS cuando el servidor estaba bajo carga. | Se redujo con la ejecución serial; en la serie final pasa 10/10. |
+
+Nota: la copia `App---EAC-.../VulnerableApi` conserva la clave JWT de 8 bytes (`IDX10653`) y no incluye `AppLog`; las series usan `Desarrollo\VulnerableApi`.
 
 ---
 
@@ -524,7 +551,7 @@ Inyector/
 | A08b | BLQ | 1 | API3:2023 | SQLi — payload UNION-based no debe causar HTTP 500 | 10/10 | 10/10 |
 | A09 | BLQ | 1 | API3:2023 | XSS reflejado — script no aparece en respuesta | 0/10 | 10/10 |
 | A09b | BLQ | 1 | API3:2023 | XSS — Content-Type debe ser application/json (previene interpretación HTML) | 10/10 | 10/10 |
-| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | N/A (10 omitidos) | N/A (10 omitidos) |
+| A10 | BLQ | 1 | API8:2023 | HTTP debe redirigir a HTTPS | 0/10 | 10/10 |
 | A11 | BLQ | 1 | API8:2023 | JWT alg=none debe rechazarse | 10/10 | 10/10 |
 | A12 | BLQ | 1 | API8:2023 | Errores no exponen stack traces | 10/10 | 10/10 |
 | A12b | BLQ | 1 | API8:2023 | Rutas inexistentes no exponen detalles del framework | 10/10 | 10/10 |
@@ -564,8 +591,8 @@ Inyector/
 | B10b | WRN | 2 | API4:2023 | Query strings excesivamente largos rechazados | 10/10 | 10/10 |
 | B11 | WRN | 2 | API8:2023 | Content-Type incorrecto rechazado con 415 | 10/10 | 10/10 |
 | B11b | WRN | 2 | API8:2023 | Cuerpos XML rechazados con 415 en login | 10/10 | 10/10 |
-| C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS | 10/10 | 10/10 |
-| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | N/A (10 omitidos) | N/A (10 omitidos) |
+| C01 | INF | 3 | API8:2023 | HSTS presente en HTTPS | 0/10 | 10/10 |
+| C02 | INF | 3 | API8:2023 | TLS mínimo 1.2 | 10/10 | 10/10 |
 | C03 | INF | 3 | API8:2023 | Versión .NET no expuesta en headers | 10/10 | 10/10 |
 | C04 | INF | 3 | API9:2023 | API v1 deprecada con Deprecation header o 410 | 0/10 | 10/10 |
 | C05 | INF | 3 | API8:2023 | Métodos HTTP no permitidos retornan 405 (paramétrico x4) | 40/40 | 40/40 |
@@ -604,16 +631,15 @@ Inyector/
 > observaron el payload en el log. Por tanto, G2-V8 tiene evidencia positiva, pero A28e
 > todavía no es una detección estable para presentarla como 10/10.
 
-> **Hallazgo (2026-09-25):** en la ejecución actual del Escenario B (parcheado) solo
-> `B08` y `B09` fallan en la API parcheada. `A10` y `C02` son no aplicables en las
-> ejecuciones HTTP locales y no deben contarse como aprobados; el conjunto queda en
-> **99/101 controles aplicables = 98.02%**. El dato histórico de
+> **Hallazgo (2026-10-18):** en la ejecución actual del Escenario B (parcheado, con HTTPS) solo
+> `B08` y `B09` fallan. `A10`, `C01` y `C02` se ejecutan contra HTTPS y pasan; el conjunto queda en
+> **101/103 test cases = 98.06%**. (La serie HTTP-only del 2026-09-25 daba 99/101 = 98.02% con A10/C02 no aplicables.) El dato histórico de
 > **97/101 = 96.04%** del 2026-09-24 sigue siendo válido como referencia del pipeline,
 > pero la validación actual confirma que los únicos controles pendientes son paginación
 > y rate limiting.
 >
 > **Quality gate (sección 3, umbral > 95%):** la ejecución actual del Escenario B queda en
-> **99/101 = 98.02%** y supera el umbral estrictamente. El valor histórico
+> **101/103 = 98.06%** y supera el umbral estrictamente. El valor histórico
 > **97/101 = 96.04%** del 2026-09-24 sigue vigente como referencia del pipeline,
 > y el agregado global de 10 runs del 2026-09-24 se sitúa en **945/1010 = 93.56%**,
 > que no sustituye el gate por run sino que refleja la tasa global acumulada de la serie.
@@ -627,10 +653,8 @@ Inyector/
 ### Subida de cobertura por vulnerabilidad ground-truth (2026-09-23)
 
 Frente al inventario de 28 vulnerabilidades ground-truth de `VulnerableApi` (comentarios
-`G#-V#` en el código fuente), la evidencia HTTP local no confirma G4-V1 porque no existe
-un terminador HTTPS delante de la API. Se investigó cada una contra el código de
-`VulnerableApi`/`VulnerableApi_Patched` y se corrigió lo viable dentro del alcance de un
-test suite HTTP-only. **Resultado: cobertura ground-truth demostrable de 25/28 (89.3%).** El 100% (28/28) no se
+`G#-V#` en el código fuente), la serie HTTP-only (2026-09-23/25) no podía confirmar G4-V1 por falta de terminador HTTPS; con el laboratorio HTTPS (2026-10-18) G4-V1 queda validada: A10 y C01 fallan 0/10 en `VulnerableApi` (sin redirección ni HSTS) y pasan 10/10 en `VulnerableApi_Patched`. Se investigó cada una contra el código de
+`VulnerableApi`/`VulnerableApi_Patched`. **Resultado: cobertura ground-truth demostrable de 26/28 (92.9%).** El 100% (28/28) no se
 alcanzó de forma honesta porque G3-V4 y G6-V3 están mitigados por la runtime de .NET 8/Kestrel — ver por qué en cada fila:
 
 | Ground-truth | Causa raíz | Acción tomada |
@@ -641,8 +665,8 @@ alcanzó de forma honesta porque G3-V4 y G6-V3 están mitigados por la runtime d
 | **G3-V4** (CRLF / header injection) | A24 ya envía payloads `%0d%0a` codificados que llegan al servidor sin excepción cliente, pero el header inyectado nunca aparece | ⚠️ Verificado con un socket TCP crudo (bypaseando las validaciones de `HttpClient`): Kestrel **rechaza la petición con 500** (`InvalidOperationException: Invalid non-ASCII or control character in header`) antes de que `Response.Headers.Append` logre inyectar el CRLF. La inyección de cabeceras está mitigada por Kestrel/.NET 8, no por el código de `VulnerableApi` — forzar una detección aquí sería un falso positivo |
 | **G5-V2** / **G2-V8** (credenciales y payload de webhook en logs de `ILogger`) | Ambas vulnerabilidades eran observables solo en los logs del proceso servidor, no en la respuesta HTTP | ✅ **Corregido y verificado**: `VulnerableApi` escribe el log a un archivo local (`bin/Debug/net8.0/logs/app.log`) y el suite `SecurityAsserts` lee ese sink para comprobar la fuga. `A28d` valida el login y `A28e` valida el webhook. |
 
-> **Límite honesto de cobertura:** con G1-V4, G2-V3, G2-V8 y G5-V2 resueltos, y G4-V1
-> pendiente de una ejecución detrás de HTTPS, la cobertura demostrable queda en **25/28 (89.3%)**.
+> **Límite honesto de cobertura:** con G1-V4, G2-V3, G2-V8, G5-V2 y G4-V1 (ahora validada con HTTPS) resueltos,
+> la cobertura demostrable queda en **26/28 (92.9%)**.
 > El 28/28 no es alcanzable sin forzar falsos positivos porque
 > G3-V4 y G6-V3 están mitigados a nivel de runtime .NET 8/Kestrel con evidencia verificada en vivo.
 
@@ -668,15 +692,15 @@ alcanzó de forma honesta porque G3-V4 y G6-V3 están mitigados por la runtime d
 
 | Métrica | Umbral | Descripción |
 |---------|--------|-------------|
-| TVP — Tasa Verdaderos Positivos | ≥ 80% | % de vulnerabilidades reales detectadas. La evidencia HTTP local demostrable es 25/28 (89.3%); G4-V1 requiere un endpoint HTTPS para validarse |
-| TFP — Tasa Falsos Positivos | ≤ 15% | % de alertas erróneas en API sin vulnerabilidades. **Resultado por run en Escenario B: 2/101 = 1.98% (≈2.0%)** (solo `B08` y `B09` en la ejecución actual); el histórico de 10 runs del 2026-09-24 quedó en 65/1010 = 6.44% de fallos globales |
-| TRN Escenario B — último TRX | **> 95%** | **99/101 = 98.02%** de controles aplicables (gate vigente de la validación actual) |
+| TVP — Tasa Verdaderos Positivos | ≥ 80% | % de vulnerabilidades reales detectadas. La evidencia demostrable es 26/28 (92.9%), incluida G4-V1 validada con HTTPS |
+| TFP — Tasa Falsos Positivos | ≤ 15% | % de alertas erróneas en API sin vulnerabilidades. **Resultado por run en Escenario B: 2/103 = 1.94% (≈1.9%)** (solo `B08` y `B09` en la ejecución actual); el histórico de 10 runs del 2026-09-24 quedó en 65/1010 = 6.44% de fallos globales |
+| TRN Escenario B — último TRX | **> 95%** | **101/103 = 98.06%** de test cases (gate vigente de la validación actual) |
 | TRN Escenario B — agregado 10 runs | — | **945/1010 = 93.56%** (media acumulada de la serie histórica; no sustituye al gate del TRX más reciente) |
 | Cobertura OWASP API Top 10 | **10/10** | Todas las categorías del top 10 cubiertas |
 | Tiempo total de ejecución | A: ~14.5 s / B: ~800 ms | Por run (Escenario A: avg 14,495 ms; Escenario B: avg 772 ms) |
 | Asserts BLQ fallidos | = 0 (Escenario B) | Quality gate de deploy: ninguno puede fallar en la API parcheada |
 | Total asserts implementados | **77 IDs / 101 test cases** | 69 `[Fact]` + 8 `[Theory]` con 32 `[InlineData]` = 101 test cases; A12c y A07b agregados el 2026-09-23 |
-| Cobertura vulnerabilidades ground-truth | **25/28 (89.3%)** | G4-V1 queda pendiente de validación detrás de HTTPS; G3-V4 y G6-V3 están mitigadas por la plataforma .NET 8/Kestrel |
+| Cobertura vulnerabilidades ground-truth | **26/28 (92.9%)** | G4-V1 validada con HTTPS (A10 y C01 fallan en A, pasan en B); G3-V4 y G6-V3 están mitigadas por la plataforma .NET 8/Kestrel |
 
 ### Tiempos de análisis complementario
 
@@ -724,13 +748,13 @@ try { (Invoke-WebRequest "http://localhost:5000/health" -TimeoutSec 5).StatusCod
 Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 Remove-Item "C:\Trabajo\Universidad\Desarrollo\VulnerableApi\vulnerable.db" -ErrorAction SilentlyContinue
-Start-Process "dotnet" -ArgumentList "run","--project","C:\Trabajo\Universidad\Desarrollo\VulnerableApi\VulnerableApi.csproj","--no-build","--configuration","Debug","--urls","http://localhost:5000" -WindowStyle Hidden
+Start-Process "dotnet" -ArgumentList "run","--project","C:\Trabajo\Universidad\Desarrollo\VulnerableApi\VulnerableApi.csproj","--no-build","--configuration","Debug","--urls","http://localhost:5000;https://localhost:5001" -WindowStyle Hidden
 
 # Escenario B — VulnerableApi_Patched (puerto 5002)
 try { (Invoke-WebRequest "http://localhost:5002/health" -TimeoutSec 5).StatusCode } catch { "Sin respuesta" }
 
 # Si no responde, arrancar:
-Start-Process "dotnet" -ArgumentList "run","--project","C:\Trabajo\Universidad\Desarrollo\VulnerableApi_Patched\VulnerableApi_Patched.csproj","--no-build","--configuration","Debug","--urls","http://localhost:5002" -WindowStyle Hidden
+Start-Process "dotnet" -ArgumentList "run","--project","C:\Trabajo\Universidad\Desarrollo\VulnerableApi_Patched\VulnerableApi_Patched.csproj","--no-build","--configuration","Debug","--urls","https://localhost:5002;http://localhost:5003" -WindowStyle Hidden
 ```
 
 ### Un assert falla con `401 Unauthorized` inesperado
@@ -796,7 +820,7 @@ for ($run = 1; $run -le 10; $run++) {
     Start-Sleep -Seconds 2
     Remove-Item $dbPath -ErrorAction SilentlyContinue   # DataSeeder re-siembra en startup
     $proc = Start-Process "dotnet" -ArgumentList "run","--project",$apiProject,"--no-build",`
-        "--configuration","Debug","--urls","http://localhost:5000" -PassThru -WindowStyle Hidden
+        "--configuration","Debug","--urls","http://localhost:5000;https://localhost:5001" -PassThru -WindowStyle Hidden
 
     # Health check (máx. 30 s)
     $ok = $false
@@ -810,7 +834,7 @@ for ($run = 1; $run -le 10; $run++) {
     $trxFile = "ScenarioA_Run${run}_${fecha}.trx"
     dotnet test "SecurityAsserts/SecurityAsserts.csproj" --no-build --configuration Debug `
         --logger "trx;LogFileName=$trxFile" --results-directory $resultsDir `
-        -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000"
+        -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5000" RunConfiguration.EnvironmentVariables.TEST_API_HTTPS_URL="https://localhost:5001"
 
     # Parsear TRX
     $trxPath = Join-Path $resultsDir $trxFile
@@ -857,19 +881,19 @@ for ($run = 1; $run -le 10; $run++) {
     Start-Sleep -Seconds 2
     Remove-Item $dbPath, "$dbPath-shm", "$dbPath-wal" -ErrorAction SilentlyContinue
     $proc = Start-Process "dotnet" -ArgumentList "run","--project",$patchedProj,"--no-build",`
-        "--configuration","Debug","--urls","http://localhost:5002" -PassThru -WindowStyle Hidden
+        "--configuration","Debug","--urls","https://localhost:5002;http://localhost:5003" -PassThru -WindowStyle Hidden
 
     $ok = $false
     for ($i = 1; $i -le 15; $i++) {
         Start-Sleep -Seconds 2
-        try { if ((Invoke-WebRequest "http://localhost:5002/health" -UseBasicParsing -TimeoutSec 3).StatusCode -eq 200) { $ok = $true; break } } catch {}
+        try { if ((Invoke-WebRequest "http://localhost:5003/health" -UseBasicParsing -SkipCertificateCheck -TimeoutSec 3).StatusCode -eq 200) { $ok = $true; break } } catch {}
     }
     if (-not $ok) { Write-Error "VulnerableApi_Patched no disponible para Run $run"; continue }
 
     $trxFile = "ScenarioB_Run${run}_${fecha}.trx"
     dotnet test "SecurityAsserts/SecurityAsserts.csproj" --no-build --configuration Debug `
         --logger "trx;LogFileName=$trxFile" --results-directory $resultsDir `
-        -- RunConfiguration.EnvironmentVariables.TEST_API_URL="http://localhost:5002"
+        -- RunConfiguration.EnvironmentVariables.TEST_API_URL="https://localhost:5002" RunConfiguration.EnvironmentVariables.TEST_API_HTTP_URL="http://localhost:5003"
 
     $trxPath = Join-Path $resultsDir $trxFile
     if (Test-Path $trxPath) {
@@ -897,13 +921,14 @@ Write-Host "Promedio B: $avgP/99 en ${avgD}ms — $qg"
 
 > **Anomalía Run 1 Escenario A (25 vs 35):** efecto warm-up — la API no terminó de inicializar SQLite al comenzar la primera ejecución. Los runs 2 y 3 son representativos. En el pipeline se documentan como `stableRuns` en `scenarioA-stats.json`.
 
-### Resultados de la serie actual (2026-09-25, 10 runs por escenario)
+### Resultados de la serie actual (2026-10-18, 10 runs por escenario, con HTTPS)
 
 Ejecución reproducida con los scripts [reports/Run-ScenarioA-10x.ps1](reports/Run-ScenarioA-10x.ps1) y [reports/Run-ScenarioB-10x.ps1](reports/Run-ScenarioB-10x.ps1), con reinicio de la API y limpieza de la base de datos antes de cada corrida para evitar contaminación de estado. Los 20 TRX fuente están en [TestResults/](TestResults). La variación se calculó como media y desviación estándar muestral.
 
 | Escenario | Corridas | Resultado por corrida | Media por corrida | Duración prom. | DE de duración | Ratio |
 |-----------|:--------:|:---------------------:|:-----------------:|---------------:|-----------------------|------:|
-| A — Vulnerable | 10 | 39–45/101 aplicables | **42.60/101 = 42.18%** | **16,587.92 ms** | **2,755.84 ms** | — |
-| B — Parcheada | 10 | 99/101 aplicables en todas las corridas | **99.00/101 = 98.02%** | **652.11 ms** | **27.43 ms** | **25.4× más rápido** |
+| A — Vulnerable | 10 | 47/103 | **47.00/103 = 45.63%** | **20,629.6 ms** | **449.20 ms** | — |
+| B — Parcheada | 10 | 101/103 en todas las corridas | **101/103 = 98.06%** | **2,762.62 ms** | **17.42 ms** | — (A es más lenta por los timeouts de sus fallos) |
 
-> La serie real del 2026-09-25 se usa como referencia vigente del proyecto. El valor puntual de una sola ejecución puede diferir ligeramente del promedio de 10 corridas, pero la media y la desviación estándar de la serie certifican la estabilidad del comportamiento observado.
+> La serie real del 2026-10-18 se usa como referencia vigente del proyecto. El valor puntual de una sola ejecución puede diferir ligeramente del promedio de 10 corridas, pero la media y la desviación estándar de la serie certifican la estabilidad del comportamiento observado.
+

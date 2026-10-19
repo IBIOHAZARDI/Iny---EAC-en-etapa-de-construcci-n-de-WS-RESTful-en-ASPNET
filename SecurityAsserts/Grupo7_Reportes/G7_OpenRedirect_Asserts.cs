@@ -39,7 +39,7 @@ public class G7_OpenRedirect_Asserts
         using var client = TestConfig.CreateClient();
         // Deshabilitar seguimiento de redirects para capturar el 302 original
         using var noRedirectClient = new HttpClient(
-            new HttpClientHandler { AllowAutoRedirect = false })
+            TestConfig.CreateHandler(allowAutoRedirect: false))
         {
             BaseAddress = new Uri(TestConfig.BaseUrl)
         };
@@ -71,7 +71,7 @@ public class G7_OpenRedirect_Asserts
     public async Task A23b_OpenRedirect_RelativeUrl_ShouldBeAllowed()
     {
         using var noRedirectClient = new HttpClient(
-            new HttpClientHandler { AllowAutoRedirect = false })
+            TestConfig.CreateHandler(allowAutoRedirect: false))
         {
             BaseAddress = new Uri(TestConfig.BaseUrl)
         };

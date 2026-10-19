@@ -3,11 +3,10 @@
     en TestResults/, agrupando por escenario (A/B). El ID se deriva del nombre del método
     de test (p. ej. "A15_SSRF_..." -> "A15"), que es 1:1 con [Trait("Assert","A15")].
     Uso: pwsh reports/Get-AssertCountsFromTrx.ps1 -Fecha 2026-09-23
-    Para una serie ejecutada detrás de HTTPS: añadir -TlsChecksApplicable
+    A10/C01/C02 se cuentan normalmente: el laboratorio expone HTTPS (ver Run-Scenario*-10x.ps1).
 #>
 param(
-    [string]$Fecha = "2026-05-15",
-    [switch]$TlsChecksApplicable
+    [string]$Fecha = "2026-05-15"
 )
 
 $resultsDir = Join-Path $PSScriptRoot "..\TestResults"
@@ -38,12 +37,6 @@ foreach ($file in $trxFiles) {
         $assertId = ($methodName -split "_")[0]
         if (-not $counts.ContainsKey($assertId)) {
             $counts[$assertId] = @{ A = @{ Passed = 0; Failed = 0; Skipped = 0 }; B = @{ Passed = 0; Failed = 0; Skipped = 0 } }
-        }
-
-        # A10/C02 retornan temprano en el laboratorio HTTP local: no hay TLS que validar.
-        if (-not $TlsChecksApplicable -and $assertId -in @("A10", "C02")) {
-            $counts[$assertId][$scenario].Skipped++
-            continue
         }
 
         if ($res.outcome -eq "Passed") {

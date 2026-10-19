@@ -26,17 +26,14 @@ public class G4_TLS_Asserts
     [Trait("OWASP",   "API8:2023")]
     public async Task A10_TLS_HttpRequest_ShouldRedirectToHttps()
     {
-        // En entornos locales o de laboratorio HTTP-only no siempre existe un terminador TLS
-        // activo. En ese caso la validación no es aplicable y no debe contarse como falso positivo.
-        if (TestConfig.BaseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase)
-            || TestConfig.BaseUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
-            || !TestConfig.BaseUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+        // Requiere un endpoint HTTP en claro (TEST_API_HTTP_URL o BaseUrl http://).
+        if (TestConfig.HttpUrl is not { } httpUrl)
         {
             return;
         }
 
-        using var handler = new HttpClientHandler { AllowAutoRedirect = false };
-        using var client = new HttpClient(handler) { BaseAddress = new Uri(TestConfig.BaseUrl) };
+        using var handler = TestConfig.CreateHandler(allowAutoRedirect: false);
+        using var client = new HttpClient(handler) { BaseAddress = new Uri(httpUrl) };
 
         var response = await client.GetAsync("/health");
 
@@ -55,24 +52,19 @@ public class G4_TLS_Asserts
     [Trait("OWASP",   "API8:2023")]
     public async Task C01_HSTS_StrictTransportSecurity_ShouldBePresent()
     {
-        var httpsUrl = TestConfig.BaseUrl.Replace("http://", "https://");
-        using var handler = new HttpClientHandler
+        // Sin endpoint HTTPS configurado el assert no es aplicable.
+        if (TestConfig.HttpsUrl is not { } httpsUrl)
         {
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => true // Acepta cert auto-firmado en pruebas
-        };
+            return;
+        }
+
+        using var handler = TestConfig.CreateHandler();
         using var client = new HttpClient(handler) { BaseAddress = new Uri(httpsUrl) };
 
-        HttpResponseMessage? response = null;
-        try { response = await client.GetAsync("/health"); }
-        catch { /* HTTPS puede no estar disponible en ambiente de pruebas básico */ }
-
-        if (response != null)
-        {
-            response.Headers.TryGetValues("Strict-Transport-Security", out var vals);
-            vals.Should().NotBeNullOrEmpty(
-                because: "C01 — La cabecera Strict-Transport-Security (HSTS) debe estar presente en HTTPS");
-        }
-        // Si HTTPS no está disponible, el assert se marca como no aplicable (skip implícito)
+        var response = await client.GetAsync("/health");
+        response.Headers.TryGetValues("Strict-Transport-Security", out var vals);
+        vals.Should().NotBeNullOrEmpty(
+            because: "C01 — La cabecera Strict-Transport-Security (HSTS) debe estar presente en HTTPS");
     }
 
     // ──────────────────────────────────────────────────────
@@ -85,22 +77,13 @@ public class G4_TLS_Asserts
     [Trait("OWASP",   "API8:2023")]
     public async Task C02_TLS_MinimumVersion_ShouldBeTls12()
     {
-        if (!TestConfig.BaseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        if (TestConfig.HttpsUrl is not { } httpsUrl)
         {
             return;
         }
 
-        var httpsUrl = TestConfig.BaseUrl.Replace("http://", "https://");
-
-        using var handler = new HttpClientHandler
-        {
-            SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
-            ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) =>
-            {
-                // Captura el protocolo negociado si es posible
-                return true;
-            }
-        };
+        using var handler = TestConfig.CreateHandler();
+        handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
         using var client = new HttpClient(handler) { BaseAddress = new Uri(httpsUrl) };
 
         // Si TLS 1.0/1.1 son los únicos aceptados, la conexión debe fallar con TLS 1.2+

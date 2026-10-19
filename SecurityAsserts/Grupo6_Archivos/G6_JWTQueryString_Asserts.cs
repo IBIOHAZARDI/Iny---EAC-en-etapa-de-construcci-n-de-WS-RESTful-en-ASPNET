@@ -34,7 +34,7 @@ public class G6_JWTQueryString_Asserts
         var token = body.GetProperty("token").GetString()!;
 
         // 2. Intentar acceder al endpoint usando el token en query string (sin cabecera Authorization)
-        using var client = new HttpClient { BaseAddress = new Uri(TestConfig.BaseUrl) };
+        using var client = new HttpClient(TestConfig.CreateHandler()) { BaseAddress = new Uri(TestConfig.BaseUrl) };
         var response = await client.GetAsync($"/api/v2/users/{TestConfig.UserAId}?token={token}");
 
         // El servidor NO debe autenticar via query string — debe retornar 401

@@ -204,3 +204,4 @@ C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful
 C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\obj\Debug\net8.0\SecurityAsserts.pdb
 C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\obj\Debug\net8.0\SecurityAsserts.genruntimeconfig.cache
 C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\obj\Debug\net8.0\ref\SecurityAsserts.dll
+C:\Trabajo\Universidad\Inyector\Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET\SecurityAsserts\bin\Debug\net8.0\xunit.runner.json

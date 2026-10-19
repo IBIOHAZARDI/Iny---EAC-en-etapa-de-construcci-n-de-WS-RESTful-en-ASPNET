@@ -23,6 +23,25 @@ public static class TestConfig
     public static int UserAOrderId => 1;
     public static int UserBOrderId => 3;
 
+    // Endpoint HTTP en claro (A10). TEST_API_HTTP_URL, o BaseUrl si ya es http://.
+    public static string? HttpUrl =>
+        Environment.GetEnvironmentVariable("TEST_API_HTTP_URL")?.TrimEnd('/')
+        ?? (BaseUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? BaseUrl : null);
+
+    // Endpoint HTTPS (C01/C02). TEST_API_HTTPS_URL, o BaseUrl si ya es https://.
+    public static string? HttpsUrl =>
+        Environment.GetEnvironmentVariable("TEST_API_HTTPS_URL")?.TrimEnd('/')
+        ?? (BaseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ? BaseUrl : null);
+
+    // Handler que acepta el certificado de desarrollo de ASP.NET Core solo para localhost.
+    public static HttpClientHandler CreateHandler(bool allowAutoRedirect = true) => new()
+    {
+        AllowAutoRedirect = allowAutoRedirect,
+        ServerCertificateCustomValidationCallback = (msg, _, _, errors) =>
+            errors == System.Net.Security.SslPolicyErrors.None
+            || msg?.RequestUri?.IsLoopback == true
+    };
+
     public static HttpClient CreateClient() =>
-        new HttpClient { BaseAddress = new Uri(BaseUrl), Timeout = TimeSpan.FromSeconds(10) };
+        new HttpClient(CreateHandler()) { BaseAddress = new Uri(BaseUrl), Timeout = TimeSpan.FromSeconds(10) };
 }
