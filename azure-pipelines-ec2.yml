@@ -1,0 +1,38 @@
+trigger: none
+pr: none
+
+pool:
+  name: Laboratorio-EC2
+  demands:
+    - Agent.OS -equals Windows_NT
+
+steps:
+  - checkout: self
+
+  - task: PowerShell@2
+    displayName: Compilar APIs y ejecutar SecurityAsserts A/B
+    inputs:
+      targetType: filePath
+      filePath: scripts\Invoke-Ec2SecurityLab.ps1
+      pwsh: true
+    env:
+      LAB_SOURCE_DIR: $(Build.SourcesDirectory)
+      LAB_TEMP_DIR: $(Agent.TempDirectory)
+      LAB_RESULTS_DIR: $(Build.ArtifactStagingDirectory)\security-lab
+      LAB_BUILD_ID: $(Build.BuildId)
+
+  - task: PublishTestResults@2
+    displayName: Publicar resultados A/B
+    condition: always()
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: '$(Build.ArtifactStagingDirectory)\security-lab\*.trx'
+      failTaskOnFailedTests: false
+      failTaskOnMissingResultsFile: true
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publicar evidencias del laboratorio
+    condition: always()
+    inputs:
+      targetPath: $(Build.ArtifactStagingDirectory)\security-lab
+      artifact: ec2-security-lab

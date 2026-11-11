@@ -30,6 +30,17 @@ Si no se define un endpoint HTTP (A10) o HTTPS (C01/C02), el assert retorna sin 
 
 El pipeline de Azure DevOps ([azure-pipelines.yml](azure-pipelines.yml)) integra SonarQube, los escenarios A y B de `SecurityAsserts` y OWASP ZAP contra la API vulnerable. Quality gate: SonarQube publica su quality gate; ZAP publica el reporte y puede bloquear el pipeline mediante `zapFailOnAlert=true`; los resultados TRX quedan publicados aun cuando los escenarios vulnerables detecten fallos esperados.
 
+Para el laboratorio EC2 Windows existe un pipeline adicional, de ejecución manual,
+en [azure-pipelines-ec2.yml](azure-pipelines-ec2.yml). Utiliza el pool
+`Laboratorio-EC2`, clona la rama `main` del repositorio público de la aplicación,
+compila ambas APIs y ejecuta los escenarios A/B con HTTP y HTTPS en localhost,
+bases SQLite nuevas por ejecución y las mismas puertas de porcentaje A < 95% y
+B > 95%. Publica los TRX y los logs de ambas APIs. Requiere Git, PowerShell 7,
+el SDK 8.0.319 y puertos 5000–5003 libres en el agente; crea o reutiliza el
+certificado de desarrollo HTTPS de la cuenta del agente. Es exclusivo de un
+entorno aislado, sin datos reales. Este pipeline inicial **no ejecuta SonarQube
+ni ZAP** y no sustituye al pipeline de seguridad completo.
+
 > **Prerrequisitos:**
 > - La API objetivo debe estar corriendo en su puerto antes de ejecutar los asserts.
 > - **Compilar y ejecutar siempre desde la carpeta `Inyector/`** — `Inyector/global.json` fija el SDK a `8.0.319` y evita errores `CS1744` con SDK 9.
@@ -931,4 +942,3 @@ Ejecución reproducida con los scripts [reports/Run-ScenarioA-10x.ps1](reports/R
 | B — Parcheada | 10 | 101/103 en todas las corridas | **101/103 = 98.06%** | **2,762.62 ms** | **17.42 ms** | — (A es más lenta por los timeouts de sus fallos) |
 
 > La serie real del 2026-10-18 se usa como referencia vigente del proyecto. El valor puntual de una sola ejecución puede diferir ligeramente del promedio de 10 corridas, pero la media y la desviación estándar de la serie certifican la estabilidad del comportamiento observado.
-
