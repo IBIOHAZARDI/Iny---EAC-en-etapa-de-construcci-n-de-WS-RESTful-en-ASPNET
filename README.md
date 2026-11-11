@@ -54,15 +54,24 @@ inyector. Este último se analiza como proyecto de pruebas: SonarQube aplica las
 reglas para código de pruebas y no calcula las mismas métricas que para código
 principal.
 
-Requiere la extensión SonarQube Server para Azure DevOps con las tareas versión
-8, la conexión de servicio `sonarqube`, un token con permiso de análisis para
-ambos proyectos, acceso del agente a SonarQube en la EC2 y el JDK indicado en el
-YAML. Las claves de proyectos y la ruta del JDK corresponden al laboratorio y
-deben ajustarse en otra instalación. Se clona `main` de la aplicación y se
-registra su commit; los dos trabajos compilan secuencialmente. El resultado del
-quality gate se publica en Azure DevOps, pero este pipeline no está configurado
-para fallar automáticamente por un quality gate negativo. Los análisis no
-incluyen métricas de cobertura.
+Requiere la variable secreta `sonarAnalysisToken` configurada en el pipeline de
+Azure DevOps, con permisos para analizar y consultar ambos proyectos en
+SonarQube. No debe añadirse al repositorio ni compartirse en logs. Usa el
+SonarScanner para .NET fijado en [.config/dotnet-tools.json](.config/dotnet-tools.json),
+el JDK indicado en el YAML y SonarQube local. El escáner .NET no admite
+`SONAR_TOKEN`: el token se pasa como argumento durante `begin` y `end`, por lo
+que podría ser visible temporalmente para procesos con permisos suficientes
+en la EC2. Usa un token de alcance limitado y no ejecutes la API vulnerable
+en esa cuenta. Azure DevOps debe enmascarar el valor en los logs.
+
+Las claves de proyectos y la ruta del JDK corresponden al laboratorio y deben
+ajustarse en otra instalación. Solo se admite la rama `main`; la extensión de
+Azure DevOps interpreta incorrectamente la rama principal de repositorios
+GitHub como `master`, por lo que este pipeline invoca el escáner directamente.
+Se clona `main` de la aplicación y se registra su commit; los dos trabajos se
+ejecutan secuencialmente. El quality gate se consulta y se muestra en los logs,
+pero uno negativo no falla el pipeline. Se falla si el análisis o la consulta
+del resultado no termina correctamente. Los análisis no incluyen cobertura.
 
 La API vulnerable permite acceder a archivos y servicios internos. Antes de
 ejecutar el pipeline A/B o agregar ZAP activo en una máquina con credenciales,
