@@ -1,0 +1,117 @@
+trigger: none
+pr: none
+
+pool:
+  name: Laboratorio-EC2
+  demands:
+    - Agent.OS -equals Windows_NT
+
+variables:
+  sonarConnection: SonarQube
+  appProjectKey: ITM_App---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET_e13968ab-1ea5-4560-be83-1bfb71d5b096
+  injectorProjectKey: ITM_Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET_bbf7d49a-bc02-4286-9815-44201d1b99c3
+  javaHome: C:\ProgramData\ITM-Lab\services\jdk-21.0.13+9
+  appDirectory: $(Build.SourcesDirectory)\sonar-app-$(Build.BuildId)
+
+jobs:
+  - job: AnalyzeApp
+    displayName: Analizar ambas APIs
+    steps:
+      - checkout: self
+        fetchDepth: 0
+
+      - task: PowerShell@2
+        displayName: Obtener codigo de las APIs
+        inputs:
+          targetType: inline
+          pwsh: true
+          script: |
+            $ErrorActionPreference = 'Stop'
+            $env:PATH = "$env:ProgramFiles\Git\cmd;$env:PATH"
+            if (Test-Path -LiteralPath $env:APP_DIRECTORY) {
+              throw "El directorio de analisis ya existe: $env:APP_DIRECTORY"
+            }
+            git clone --branch main 'https://github.com/IBIOHAZARDI/App---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET.git' $env:APP_DIRECTORY
+            if ($LASTEXITCODE -ne 0) { throw "No se pudo clonar la aplicacion: $LASTEXITCODE" }
+            git -C $env:APP_DIRECTORY rev-parse HEAD
+            if ($LASTEXITCODE -ne 0) { throw "No se pudo identificar la revision: $LASTEXITCODE" }
+        env:
+          APP_DIRECTORY: $(appDirectory)
+
+      - task: SonarQubePrepare@8
+        displayName: Preparar analisis de las APIs
+        inputs:
+          SonarQube: $(sonarConnection)
+          scannerMode: dotnet
+          projectKey: $(appProjectKey)
+          extraProperties: |
+            sonar.projectBaseDir=$(appDirectory)
+            sonar.scanner.scanAll=false
+            sonar.exclusions=**/bin/**,**/obj/**
+
+      - task: PowerShell@2
+        displayName: Compilar ambas APIs para SonarQube
+        inputs:
+          targetType: inline
+          pwsh: true
+          script: |
+            $ErrorActionPreference = 'Stop'
+            $env:PATH = "$env:ProgramFiles\dotnet;$env:PATH"
+            foreach ($project in @('VulnerableApi\VulnerableApi.csproj', 'VulnerableApi_Patched\VulnerableApi_Patched.csproj')) {
+              dotnet build (Join-Path $env:APP_DIRECTORY $project) --configuration Debug --no-incremental --nologo
+              if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion de ${project}: $LASTEXITCODE" }
+            }
+        env:
+          APP_DIRECTORY: $(appDirectory)
+
+      - task: SonarQubeAnalyze@8
+        displayName: Enviar analisis de las APIs
+        inputs:
+          jdkversion: JAVA_HOME
+        env:
+          JAVA_HOME: $(javaHome)
+
+      - task: SonarQubePublish@8
+        displayName: Publicar quality gate de las APIs
+        inputs:
+          pollingTimeoutSec: '300'
+
+  - job: AnalyzeInjector
+    displayName: Analizar SecurityAsserts
+    dependsOn: AnalyzeApp
+    steps:
+      - checkout: self
+        fetchDepth: 0
+
+      - task: SonarQubePrepare@8
+        displayName: Preparar analisis del inyector
+        inputs:
+          SonarQube: $(sonarConnection)
+          scannerMode: dotnet
+          projectKey: $(injectorProjectKey)
+          extraProperties: |
+            sonar.scanner.scanAll=false
+            sonar.exclusions=**/bin/**,**/obj/**,**/TestResults/**
+
+      - task: PowerShell@2
+        displayName: Compilar SecurityAsserts para SonarQube
+        inputs:
+          targetType: inline
+          pwsh: true
+          script: |
+            $ErrorActionPreference = 'Stop'
+            $env:PATH = "$env:ProgramFiles\dotnet;$env:PATH"
+            dotnet build (Join-Path $env:BUILD_SOURCESDIRECTORY 'SecurityAsserts\SecurityAsserts.csproj') --configuration Debug --no-incremental --nologo
+            if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion de SecurityAsserts: $LASTEXITCODE" }
+
+      - task: SonarQubeAnalyze@8
+        displayName: Enviar analisis del inyector
+        inputs:
+          jdkversion: JAVA_HOME
+        env:
+          JAVA_HOME: $(javaHome)
+
+      - task: SonarQubePublish@8
+        displayName: Publicar quality gate del inyector
+        inputs:
+          pollingTimeoutSec: '300'

@@ -46,6 +46,29 @@ estar disponible en el PATH del proceso del agente antes de iniciarlo. Es exclus
 entorno aislado, sin datos reales. Este pipeline inicial **no ejecuta SonarQube
 ni ZAP** y no sustituye al pipeline de seguridad completo.
 
+Para el análisis estático en la misma EC2 se dispone de
+[azure-pipelines-sonar-ec2.yml](azure-pipelines-sonar-ec2.yml), un pipeline manual
+independiente que no inicia las APIs ni ejecuta ZAP. Analiza ambas APIs en el
+proyecto de SonarQube de la aplicación y `SecurityAsserts` en el proyecto del
+inyector. Este último se analiza como proyecto de pruebas: SonarQube aplica las
+reglas para código de pruebas y no calcula las mismas métricas que para código
+principal.
+
+Requiere la extensión SonarQube Server para Azure DevOps con las tareas versión
+8, la conexión de servicio `SonarQube`, un token con permiso de análisis para
+ambos proyectos, acceso del agente a SonarQube en la EC2 y el JDK indicado en el
+YAML. Las claves de proyectos y la ruta del JDK corresponden al laboratorio y
+deben ajustarse en otra instalación. Se clona `main` de la aplicación y se
+registra su commit; los dos trabajos compilan secuencialmente. El resultado del
+quality gate se publica en Azure DevOps, pero este pipeline no está configurado
+para fallar automáticamente por un quality gate negativo. Los análisis no
+incluyen métricas de cobertura.
+
+La API vulnerable permite acceder a archivos y servicios internos. Antes de
+ejecutar el pipeline A/B o agregar ZAP activo en una máquina con credenciales,
+se debe aislar la API y verificar que no pueda acceder al agente, sus secretos,
+servicios locales o metadatos de la instancia.
+
 > **Prerrequisitos:**
 > - La API objetivo debe estar corriendo en su puerto antes de ejecutar los asserts.
 > - **Compilar y ejecutar siempre desde la carpeta `Inyector/`** — `Inyector/global.json` fija el SDK a `8.0.319` y evita errores `CS1744` con SDK 9.
