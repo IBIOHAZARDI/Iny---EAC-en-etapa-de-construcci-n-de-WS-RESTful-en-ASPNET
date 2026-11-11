@@ -37,7 +37,12 @@ compila ambas APIs y ejecuta los escenarios A/B con HTTP y HTTPS en localhost,
 bases SQLite nuevas por ejecución y las mismas puertas de porcentaje A < 95% y
 B > 95%. Publica los TRX y los logs de ambas APIs. Requiere Git, PowerShell 7,
 el SDK 8.0.319 y puertos 5000–5003 libres en el agente; crea o reutiliza el
-certificado de desarrollo HTTPS de la cuenta del agente. Es exclusivo de un
+certificado de desarrollo HTTPS de la cuenta del agente. Las URL se fijan al
+arrancar cada API: A usa HTTP 5000 y HTTPS 5001; B usa HTTPS 5002 y HTTP 5003,
+independientemente de las URL configuradas en la aplicación. A se ejecuta en
+Development y B en Production para comprobar su configuración de producción.
+PowerShell 7 debe
+estar disponible en el PATH del proceso del agente antes de iniciarlo. Es exclusivo de un
 entorno aislado, sin datos reales. Este pipeline inicial **no ejecuta SonarQube
 ni ZAP** y no sustituye al pipeline de seguridad completo.
 

@@ -89,15 +89,15 @@ try {
 
     $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
     $scenarios = @(
-        @{ Name = 'A'; Folder = 'VulnerableApi'; Assembly = 'VulnerableApi.dll'; Base = 'http://localhost:5000'; Http = 'http://localhost:5000'; Https = 'https://localhost:5001' },
-        @{ Name = 'B'; Folder = 'VulnerableApi_Patched'; Assembly = 'VulnerableApi_Patched.dll'; Base = 'https://localhost:5002'; Http = 'http://localhost:5003'; Https = 'https://localhost:5002' }
+        @{ Name = 'A'; Environment = 'Development'; Folder = 'VulnerableApi'; Assembly = 'VulnerableApi.dll'; Base = 'http://localhost:5000'; Http = 'http://localhost:5000'; Https = 'https://localhost:5001' },
+        @{ Name = 'B'; Environment = 'Production'; Folder = 'VulnerableApi_Patched'; Assembly = 'VulnerableApi_Patched.dll'; Base = 'https://localhost:5002'; Http = 'http://localhost:5003'; Https = 'https://localhost:5002' }
     )
     $rates = @{}
     foreach ($scenario in $scenarios) {
         $apiDir = Join-Path $app $scenario.Folder
         $dll = Join-Path $apiDir "bin\Debug\net8.0\$($scenario.Assembly)"
         $db = Join-Path $work "scenario-$($scenario.Name).db"
-        $env:ASPNETCORE_ENVIRONMENT = 'Development'
+        $env:ASPNETCORE_ENVIRONMENT = $scenario.Environment
         $env:ConnectionStrings__DefaultConnection = "Data Source=$db"
         $env:TEST_API_URL = $scenario.Base
         $env:TEST_API_HTTP_URL = $scenario.Http
@@ -139,3 +139,6 @@ try {
         [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process')
     }
 }
+
+# The expected failing assertions leave a nonzero native exit code after the gates pass.
+$global:LASTEXITCODE = 0
