@@ -4,7 +4,7 @@ using SecurityAsserts.Configuration;
 using Xunit;
 
 //linea adicional para estimular el pipeline
-// ejecucion pipeline aqui
+// ejecucion pipeline
 
 namespace SecurityAsserts.Grupo3_Inyeccion;
 
