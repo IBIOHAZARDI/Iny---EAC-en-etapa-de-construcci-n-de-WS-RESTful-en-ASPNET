@@ -61,12 +61,15 @@ inyector. Este último se analiza como proyecto de pruebas: SonarQube aplica las
 reglas para código de pruebas y no calcula las mismas métricas que para código
 principal.
 
-Después de los dos análisis ejecuta los asserts A/B y un escaneo activo ZAP
-acotado para cada escenario, con una base SQLite nueva e independiente de la
-usada por los asserts. La API B permanece en Production. Los resultados TRX,
-logs e informes se publican como artefacto `ec2-security-lab`. ZAP inicia sesión
-con el usuario sintético `usera@test.local`; antes del escaneo comprueba que una
-solicitud a órdenes reciba HTTP 200 a través de ZAP.
+Después de los dos análisis ejecuta **10 corridas independientes por escenario**:
+reinicia la API, usa una base SQLite nueva y rota el log antes de cada corrida.
+Calcula el promedio y la desviación estándar a partir de los 20 TRX y aplica los
+gates A < 95% y B > 95% sobre el promedio. Luego ejecuta un escaneo activo ZAP
+acotado para cada escenario, con bases SQLite independientes de las pruebas. La
+API B permanece en Production. Los 20 TRX, estadísticas JSON, logs e informes se
+publican como artefacto `ec2-security-lab`. ZAP inicia sesión con el usuario
+sintético `usera@test.local`; antes del escaneo comprueba que una solicitud a
+órdenes reciba HTTP 200 a través de ZAP.
 
 El plan [zap-ec2-plan.yml](scripts/zap-ec2-plan.yml) solo siembra las rutas
 GET v2 de productos, búsqueda por nombre, categoría y órdenes, y ejecuta las
@@ -471,26 +474,24 @@ Test Run Summary:
 
 ### Regla de quality gate para el pipeline
 
-El pipeline **ejecuta todos los tests sin filtro** en un único `dotnet test` y evalúa el TRX resultado:
+El pipeline EC2 ejecuta todos los tests sin filtro en **10 corridas independientes por escenario**. Calcula el promedio de los 10 TRX y evalúa los siguientes gates:
 
 ```powershell
-# ── Quality Gate Escenario A: anomalía si avgPassed ≥ 99 ──────────────────
-# (indicaría que el Inyector no está conectado a la API vulnerable)
+# ── Quality Gate Escenario A: el promedio debe ser menor al 95% ───────────
 $statsA = Get-Content "$resultsDir/scenarioA-stats.json" | ConvertFrom-Json
-if ($statsA.avgPassed -ge 99) {
-    Write-Error "ANOMALÍA: Escenario A pasó $($statsA.avgPassed)/99 — el Inyector podría no estar conectado"
+if ($statsA.runCount -ne 10 -or $statsA.avgRatePercent -ge 95) {
+    Write-Error "FALLO Quality Gate A: se requieren 10 corridas y promedio <95%; actual=$($statsA.avgRatePercent)%"
     exit 1
 }
-Write-Host "Quality Gate A: avgPassed=$($statsA.avgPassed)/99 — correcto (API vulnerable detectada)"
+Write-Host "Quality Gate A aprobado: promedio=$($statsA.avgRatePercent)% (<95%)"
 
-# ── Quality Gate Escenario B: falla si avgPassed <= 95 ─────────────────────
-# Umbral: > 95 % de 99 tests = 96 (mínimo aceptado; 96.0 %)
+# ── Quality Gate Escenario B: el promedio debe ser mayor al 95% ───────────
 $statsB = Get-Content "$resultsDir/scenarioB-stats.json" | ConvertFrom-Json
-if ($statsB.avgPassed -le 95) {
-    Write-Error "FALLO Quality Gate B: $($statsB.avgPassed)/99 <= umbral 95. Se requiere > 95%. Revisar regresiones."
+if ($statsB.runCount -ne 10 -or $statsB.avgRatePercent -le 95) {
+    Write-Error "FALLO Quality Gate B: se requieren 10 corridas y promedio >95%; actual=$($statsB.avgRatePercent)%"
     exit 1
 }
-Write-Host "Quality Gate B APROBADO: $($statsB.avgPassed)/99 > 95%"
+Write-Host "Quality Gate B aprobado: promedio=$($statsB.avgRatePercent)% (>95%)"
 ```
 
 Evaluación local equivalente (un solo run):
@@ -863,11 +864,11 @@ dotnet test --filter "Assert=A25" -- xunit.parallelizeTestCollections=false
 
 ### Los resultados `.trx` no aparecen en Azure DevOps
 
-Los TRX se publican mediante `PublishTestResults@2` con `testResultsFiles: '$(testResultsDir)/ScenarioA_Run*.trx'` y `ScenarioB_Run*.trx` por separado. Verificar que:
+Los TRX de las 10 corridas de cada escenario se publican mediante `PublishTestResults@2`. En el pipeline EC2, los archivos están en `$(Build.ArtifactStagingDirectory)\security-lab\$(Build.BuildId)` y siguen el patrón `Scenario{A,B}_Run{1..10}_{yyyy-MM-dd}.trx`. Verificar que:
 
 ```powershell
 # El directorio de resultados existe y contiene los TRX
-Get-ChildItem "$(Build.ArtifactStagingDirectory)/test-results" -Filter "Scenario*.trx"
+Get-ChildItem "$(Build.ArtifactStagingDirectory)\security-lab\$(Build.BuildId)" -Filter "Scenario*.trx"
 # Debe mostrar 20 archivos (A_Run1..A_Run10 y B_Run1..B_Run10)
 ```
 
@@ -877,7 +878,7 @@ Si los TRX están en otra ruta, actualizar `testResultsDir` en las variables del
 
 ## 9. Ejecución multi-run (replicando el pipeline)
 
-El pipeline ejecuta **10 runs independientes** por escenario para calcular promedios estadísticos. Para replicarlo localmente:
+El pipeline EC2 ejecuta **10 corridas independientes** por escenario para calcular promedios y desviaciones estándar. Cada corrida reinicia la API, usa una base de datos nueva y rota el log para evitar contaminación de estado. El pipeline publica `scenarioA-stats.json` y `scenarioB-stats.json`, además de los 20 TRX y las evidencias de ZAP. Los gates usan el promedio: A < 95% y B > 95%. Para replicarlo localmente:
 
 ### Multi-run Escenario A (10 runs con DB limpia entre cada uno)
 
@@ -919,16 +920,20 @@ for ($run = 1; $run -le 10; $run++) {
         $c       = $x.TestRun.ResultSummary.Counters
         $durMs   = [math]::Round(([datetime]$x.TestRun.Times.finish - [datetime]$x.TestRun.Times.start).TotalMilliseconds)
         Write-Host "Run $run → passed=$($c.passed) failed=$($c.failed) dur=${durMs}ms"
-        $allResults += [PSCustomObject]@{ Run=$run; Passed=[int]$c.passed; Failed=[int]$c.failed; DurMs=$durMs }
+            $allResults += [PSCustomObject]@{ Run=$run; Passed=[int]$c.passed; Failed=[int]$c.failed; Total=[int]$c.total; DurMs=$durMs }
     }
 }
 
 # Resumen
 Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
-$avgP = [math]::Round(($allResults.Passed | Measure-Object -Average).Average, 1)
+if ($allResults.Count -ne 10) { throw "Se requieren 10 corridas A; completadas: $($allResults.Count)" }
+$avgPassed = ($allResults.Passed | Measure-Object -Average).Average
+$avgP = [math]::Round($avgPassed, 1)
 $avgD = [math]::Round(($allResults.DurMs  | Measure-Object -Average).Average)
-Write-Host "Promedio A: $avgP/99 en ${avgD}ms"
+$avgRate = 100 * $avgPassed / $allResults[0].Total
+if ($avgRate -ge 95) { throw "Fallo quality gate A: promedio=$avgRate% (se requiere <95%)" }
+Write-Host "Promedio A: $avgP/$($allResults[0].Total) ($([math]::Round($avgRate, 2))%) en ${avgD}ms"
 ```
 
 ### Multi-run Escenario B (10 runs, con DB reiniciada entre cada uno)
@@ -964,7 +969,7 @@ for ($run = 1; $run -le 10; $run++) {
         Start-Sleep -Seconds 2
         try { if ((Invoke-WebRequest "http://localhost:5003/health" -UseBasicParsing -SkipCertificateCheck -TimeoutSec 3).StatusCode -eq 200) { $ok = $true; break } } catch {}
     }
-    if (-not $ok) { Write-Error "VulnerableApi_Patched no disponible para Run $run"; continue }
+    if (-not $ok) { throw "VulnerableApi_Patched no disponible para Run $run" }
 
     $trxFile = "ScenarioB_Run${run}_${fecha}.trx"
     dotnet test "SecurityAsserts/SecurityAsserts.csproj" --no-build --configuration Debug `
@@ -977,15 +982,18 @@ for ($run = 1; $run -le 10; $run++) {
         $c       = $x.TestRun.ResultSummary.Counters
         $durMs   = [math]::Round(([datetime]$x.TestRun.Times.finish - [datetime]$x.TestRun.Times.start).TotalMilliseconds)
         Write-Host "Run $run → passed=$($c.passed) failed=$($c.failed) dur=${durMs}ms"
-        $allResults += [PSCustomObject]@{ Run=$run; Passed=[int]$c.passed; Failed=[int]$c.failed; DurMs=$durMs }
+        $allResults += [PSCustomObject]@{ Run=$run; Passed=[int]$c.passed; Failed=[int]$c.failed; Total=[int]$c.total; DurMs=$durMs }
     }
     Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
 }
 
-$avgP = [math]::Round(($allResults.Passed | Measure-Object -Average).Average, 1)
+if ($allResults.Count -ne 10) { throw "Se requieren 10 corridas B; completadas: $($allResults.Count)" }
+$avgPassed = ($allResults.Passed | Measure-Object -Average).Average
+$avgP = [math]::Round($avgPassed, 1)
 $avgD = [math]::Round(($allResults.DurMs  | Measure-Object -Average).Average)
-$qg   = if ($avgP -ge 95) { "APROBADO" } else { "REVISAR" }
-Write-Host "Promedio B: $avgP/99 en ${avgD}ms — $qg"
+$avgRate = 100 * $avgPassed / $allResults[0].Total
+if ($avgRate -le 95) { throw "Fallo quality gate B: promedio=$avgRate% (se requiere >95%)" }
+Write-Host "Promedio B: $avgP/$($allResults[0].Total) ($([math]::Round($avgRate, 2))%) en ${avgD}ms — APROBADO"
 ```
 
 ### Resultados históricos de referencia (2026-05-13, 3 runs cada escenario)
@@ -995,7 +1003,7 @@ Write-Host "Promedio B: $avgP/99 en ${avgD}ms — $qg"
 | A — Vulnerable | 25/99 | 35/99 | 35/99 | **31.7/99** | 14,495 ms | — |
 | B — Parcheada | 95/99 | 95/99 | 95/99 | **95.0/99** | 772 ms | 18.8× más rápido |
 
-> **Anomalía Run 1 Escenario A (25 vs 35):** efecto warm-up — la API no terminó de inicializar SQLite al comenzar la primera ejecución. Los runs 2 y 3 son representativos. En el pipeline se documentan como `stableRuns` en `scenarioA-stats.json`.
+> **Anomalía histórica Run 1 Escenario A (25 vs 35):** efecto warm-up — la API no terminó de inicializar SQLite al comenzar la primera ejecución de aquella serie. Los runs 2 y 3 fueron representativos. El pipeline actual informa las 10 corridas en `scenarioA-stats.json` y no excluye corridas del promedio.
 
 ### Resultados de la serie actual (2026-10-18, 10 runs por escenario, con HTTPS)
 
