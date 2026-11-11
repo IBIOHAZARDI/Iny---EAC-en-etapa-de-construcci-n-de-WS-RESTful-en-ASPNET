@@ -7,7 +7,8 @@ param(
     [Parameter(Mandatory)]
     [string]$Work,
     [Parameter(Mandatory)]
-    [string]$Results
+    [string]$Results,
+    [string]$ZapJar = 'C:\ProgramData\ITM-Lab\tools\ZAP_2.17.0\zap-2.17.0.jar'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,9 +20,8 @@ if ([string]::IsNullOrWhiteSpace($env:JAVA_HOME)) {
     throw 'JAVA_HOME is required for ZAP.'
 }
 $java = Join-Path $env:JAVA_HOME 'bin\java.exe'
-$jar = 'C:\ProgramData\ITM-Lab\tools\ZAP_2.17.0\zap-2.17.0.jar'
 $plan = Join-Path $PSScriptRoot 'zap-ec2-plan.yml'
-foreach ($path in @($java, $jar, $plan)) {
+foreach ($path in @($java, $ZapJar, $plan)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required ZAP file not found: $path"
     }
@@ -46,7 +46,7 @@ try {
     New-Item -ItemType Directory -Path $zapHome -ErrorAction Stop | Out-Null
     $stdout = Join-Path $Results "zap-$Scenario-stdout.log"
     $stderr = Join-Path $Results "zap-$Scenario-stderr.log"
-    $arguments = @('-jar', "`"$jar`"", '-cmd', '-dir', "`"$zapHome`"", '-autorun', "`"$plan`"")
+    $arguments = @('-Xmx768m', '-jar', "`"$ZapJar`"", '-cmd', '-dir', "`"$zapHome`"", '-autorun', "`"$plan`"")
     $process = Start-Process -FilePath $java -ArgumentList $arguments -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr -PassThru
     try {
