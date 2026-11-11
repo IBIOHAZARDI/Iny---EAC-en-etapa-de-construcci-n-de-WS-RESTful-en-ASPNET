@@ -320,7 +320,7 @@ Los asserts se organizan en tres oleadas de criticidad creciente:
 #   [Trait("Oleada", "Oleada1")] → filtrar por trámite/criticidad
 #   [Trait("Category", "BLQ")]  → filtrar por categoría de bloqueo
 #
-# El pipeline ejecuta todos los tests en un único dotnet test (sin filtro)
+# Cada corrida del pipeline ejecuta todos los tests en un único dotnet test (sin filtro)
 # y evalúa los resultados del TRX como quality gate.
 
 # Oleada 1 (Bloqueantes) — Trait "Oleada"
@@ -872,7 +872,7 @@ Get-ChildItem "$(Build.ArtifactStagingDirectory)\security-lab\$(Build.BuildId)" 
 # Debe mostrar 20 archivos (A_Run1..A_Run10 y B_Run1..B_Run10)
 ```
 
-Si los TRX están en otra ruta, actualizar `testResultsDir` en las variables del pipeline.
+Si los TRX están en otra ruta, mantener consistente `LAB_RESULTS_DIR` con el patrón `testResultsFiles` de [azure-pipelines-sonar-ec2.yml](azure-pipelines-sonar-ec2.yml).
 
 ---
 
@@ -920,7 +920,7 @@ for ($run = 1; $run -le 10; $run++) {
         $c       = $x.TestRun.ResultSummary.Counters
         $durMs   = [math]::Round(([datetime]$x.TestRun.Times.finish - [datetime]$x.TestRun.Times.start).TotalMilliseconds)
         Write-Host "Run $run → passed=$($c.passed) failed=$($c.failed) dur=${durMs}ms"
-            $allResults += [PSCustomObject]@{ Run=$run; Passed=[int]$c.passed; Failed=[int]$c.failed; Total=[int]$c.total; DurMs=$durMs }
+        $allResults += [PSCustomObject]@{ Run=$run; Passed=[int]$c.passed; Failed=[int]$c.failed; Total=[int]$c.total; DurMs=$durMs }
     }
 }
 

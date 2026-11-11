@@ -214,6 +214,9 @@ try {
                 Write-Host "Scenario $($scenario.Name) run $run passed $($testSummary.Passed)/$($testSummary.Total) ($([math]::Round($testSummary.Rate, 2))%) in $($testSummary.DurationMs) ms."
             } finally {
                 Stop-LabProcess $process
+                if (Test-Path -LiteralPath $apiLog) {
+                    Copy-Item -LiteralPath $apiLog -Destination (Join-Path $results "scenario-$($scenario.Name)-$runLabel-app.log") -Force -ErrorAction Stop
+                }
             }
         }
         $stats = Get-ScenarioStats -Name $scenario.Name -Runs $runResults
@@ -242,6 +245,9 @@ try {
                 Wait-Health -Url $scenario.Base -Process $process
             } finally {
                 Stop-LabProcess $process
+                if (Test-Path -LiteralPath $apiLog) {
+                    Copy-Item -LiteralPath $apiLog -Destination (Join-Path $results "zap-api-$($scenario.Name)-app.log") -Force -ErrorAction Stop
+                }
             }
         }
     }
