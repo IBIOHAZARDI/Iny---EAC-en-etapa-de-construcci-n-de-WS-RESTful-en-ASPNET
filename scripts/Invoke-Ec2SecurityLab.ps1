@@ -67,7 +67,7 @@ function Get-TestRate {
 
 $processes = @()
 $variables = @(
-    'ASPNETCORE_ENVIRONMENT', 'ASPNETCORE_URLS', 'ConnectionStrings__DefaultConnection',
+    'ASPNETCORE_ENVIRONMENT', 'ConnectionStrings__DefaultConnection',
     'TEST_API_URL', 'TEST_API_HTTP_URL', 'TEST_API_HTTPS_URL'
 )
 $previous = @{}
@@ -98,14 +98,14 @@ try {
         $dll = Join-Path $apiDir "bin\Debug\net8.0\$($scenario.Assembly)"
         $db = Join-Path $work "scenario-$($scenario.Name).db"
         $env:ASPNETCORE_ENVIRONMENT = 'Development'
-        $env:ASPNETCORE_URLS = "$($scenario.Http);$($scenario.Https)"
         $env:ConnectionStrings__DefaultConnection = "Data Source=$db"
         $env:TEST_API_URL = $scenario.Base
         $env:TEST_API_HTTP_URL = $scenario.Http
         $env:TEST_API_HTTPS_URL = $scenario.Https
         $stdout = Join-Path $results "scenario-$($scenario.Name)-stdout.log"
         $stderr = Join-Path $results "scenario-$($scenario.Name)-stderr.log"
-        $process = Start-Process -FilePath $dotnet -ArgumentList @("`"$dll`"") -WorkingDirectory $apiDir -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+        $urls = "$($scenario.Http);$($scenario.Https)"
+        $process = Start-Process -FilePath $dotnet -ArgumentList @("`"$dll`"", '--urls', "`"$urls`"") -WorkingDirectory $apiDir -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
         $processes += $process
         Wait-Health -Url $scenario.Base -Process $process
         $trx = "scenario-$($scenario.Name).trx"
