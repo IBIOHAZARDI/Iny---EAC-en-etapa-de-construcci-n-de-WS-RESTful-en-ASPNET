@@ -53,6 +53,8 @@ Para el análisis estático en la misma EC2 se dispone de
 ejecuta automáticamente con cada push a `main` y también se puede lanzar manualmente.
 Los PR no disparan el pipeline: los jobs ejecutan código y ZAP activo en el agente
 self-hosted de EC2, por lo que solo se deben integrar cambios confiables en `main`.
+El trigger CI se administra desde este YAML; los pushes se agrupan si ya hay una
+ejecución en curso para evitar acumular escaneos en cola.
 El pipeline analiza ambas APIs en el
 proyecto de SonarQube de la aplicación y `SecurityAsserts` en el proyecto del
 inyector. Este último se analiza como proyecto de pruebas: SonarQube aplica las
