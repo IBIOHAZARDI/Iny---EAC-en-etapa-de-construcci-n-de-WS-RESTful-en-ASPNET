@@ -3,6 +3,8 @@ using FluentAssertions;
 using SecurityAsserts.Configuration;
 using Xunit;
 
+//linea adicional para estimular el pipeline
+
 namespace SecurityAsserts.Grupo3_Inyeccion;
 
 /// <summary>
