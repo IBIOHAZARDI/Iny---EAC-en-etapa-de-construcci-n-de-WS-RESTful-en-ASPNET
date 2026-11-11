@@ -120,6 +120,19 @@ try {
             Stop-Process -Id $process.Id -ErrorAction Stop
             $process.WaitForExit()
         }
+        if ($env:LAB_ZAP_ENABLED -eq 'true') {
+            $env:ConnectionStrings__DefaultConnection = "Data Source=$(Join-Path $work "zap-scenario-$($scenario.Name).db")"
+            $zapStdout = Join-Path $results "zap-api-$($scenario.Name)-stdout.log"
+            $zapStderr = Join-Path $results "zap-api-$($scenario.Name)-stderr.log"
+            $process = Start-Process -FilePath $dotnet -ArgumentList @("`"$dll`"", '--urls', "`"$urls`"") -WorkingDirectory $apiDir -RedirectStandardOutput $zapStdout -RedirectStandardError $zapStderr -PassThru
+            $processes += $process
+            Wait-Health -Url $scenario.Base -Process $process
+            & (Join-Path $PSScriptRoot 'Invoke-Ec2ZapScan.ps1') -Scenario $scenario.Name -BaseUrl $scenario.Base -Work $work -Results $results
+            if (-not $process.HasExited) {
+                Stop-Process -Id $process.Id -ErrorAction Stop
+                $process.WaitForExit()
+            }
+        }
     }
     if ($rates.A.Total -ne $rates.B.Total) {
         throw 'Scenario A and B ran different numbers of tests.'
