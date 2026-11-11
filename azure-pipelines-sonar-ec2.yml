@@ -48,3 +48,40 @@ jobs:
           JAVA_HOME: $(javaHome)
           SONAR_PROJECT_KEY: $(injectorProjectKey)
           SONAR_ANALYSIS_TOKEN: $(sonarAnalysisToken)
+
+  - job: SecurityLab
+    displayName: SecurityAsserts y ZAP A/B
+    dependsOn: AnalyzeInjector
+    timeoutInMinutes: 120
+    steps:
+      - checkout: self
+
+      - task: PowerShell@2
+        displayName: Ejecutar SecurityAsserts y ZAP A/B
+        inputs:
+          targetType: filePath
+          filePath: scripts\Invoke-Ec2SecurityLab.ps1
+          pwsh: true
+        env:
+          JAVA_HOME: $(javaHome)
+          LAB_SOURCE_DIR: $(Build.SourcesDirectory)
+          LAB_TEMP_DIR: $(Agent.TempDirectory)
+          LAB_RESULTS_DIR: $(Build.ArtifactStagingDirectory)\security-lab
+          LAB_BUILD_ID: $(Build.BuildId)
+          LAB_ZAP_ENABLED: 'true'
+
+      - task: PublishTestResults@2
+        displayName: Publicar resultados A/B
+        condition: always()
+        inputs:
+          testResultsFormat: VSTest
+          testResultsFiles: '$(Build.ArtifactStagingDirectory)\security-lab\*.trx'
+          failTaskOnFailedTests: false
+          failTaskOnMissingResultsFile: true
+
+      - task: PublishPipelineArtifact@1
+        displayName: Publicar evidencias del laboratorio
+        condition: always()
+        inputs:
+          targetPath: $(Build.ArtifactStagingDirectory)\security-lab
+          artifact: ec2-security-lab

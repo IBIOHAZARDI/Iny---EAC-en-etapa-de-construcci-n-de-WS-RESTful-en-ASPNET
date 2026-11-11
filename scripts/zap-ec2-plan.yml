@@ -1,0 +1,61 @@
+env:
+  contexts:
+    - name: lab
+      urls:
+        - ${ZAP_LAB_URL}
+      includePaths:
+        - '${ZAP_LAB_URL}/api/v2/products(?:/search|/by-category)?(?:\?.*)?'
+        - '${ZAP_LAB_URL}/api/v2/orders(?:\?.*)?'
+  parameters:
+    failOnError: true
+    failOnWarning: true
+    progressToStdout: true
+jobs:
+  - type: replacer
+    rules:
+      - description: synthetic laboratory bearer token
+        url: '^https?://localhost:(5000|5002)/api/v2/.*'
+        matchType: req_header
+        matchString: Authorization
+        matchRegex: false
+        replacementString: 'Bearer ${ZAP_LAB_TOKEN}'
+  - type: requestor
+    requests:
+      - name: authenticated orders
+        url: '${ZAP_LAB_URL}/api/v2/orders'
+        method: GET
+        responseCode: 200
+      - name: products
+        url: '${ZAP_LAB_URL}/api/v2/products'
+        method: GET
+        responseCode: 200
+      - name: product search
+        url: '${ZAP_LAB_URL}/api/v2/products/search?name=lab'
+        method: GET
+        responseCode: 200
+      - name: product category
+        url: '${ZAP_LAB_URL}/api/v2/products/by-category?category=lab'
+        method: GET
+        responseCode: 200
+  - type: activeScan
+    parameters:
+      context: lab
+      maxScanDurationInMins: 20
+      maxRuleDurationInMins: 5
+      threadPerHost: 2
+    policyDefinition:
+      defaultStrength: Low
+      defaultThreshold: Off
+      rules:
+        - id: 40018
+          name: SQL injection
+          threshold: Medium
+        - id: 40012
+          name: reflected XSS
+          threshold: Medium
+  - type: report
+    parameters:
+      template: risk-confidence-html
+      reportDir: '${ZAP_LAB_RESULTS}'
+      reportFile: 'zap-${ZAP_LAB_SCENARIO}.html'
+      reportTitle: 'ZAP laboratory ${ZAP_LAB_SCENARIO}'
