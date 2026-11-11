@@ -49,8 +49,11 @@ entorno aislado, sin datos reales. Este pipeline inicial **no ejecuta SonarQube
 ni ZAP** y no sustituye al pipeline de seguridad completo.
 
 Para el análisis estático en la misma EC2 se dispone de
-[azure-pipelines-sonar-ec2.yml](azure-pipelines-sonar-ec2.yml), un pipeline manual
-que analiza ambas APIs en el
+[azure-pipelines-sonar-ec2.yml](azure-pipelines-sonar-ec2.yml), un pipeline que se
+ejecuta automáticamente con cada push a `main` y también se puede lanzar manualmente.
+Los PR no disparan el pipeline: los jobs ejecutan código y ZAP activo en el agente
+self-hosted de EC2, por lo que solo se deben integrar cambios confiables en `main`.
+El pipeline analiza ambas APIs en el
 proyecto de SonarQube de la aplicación y `SecurityAsserts` en el proyecto del
 inyector. Este último se analiza como proyecto de pruebas: SonarQube aplica las
 reglas para código de pruebas y no calcula las mismas métricas que para código
