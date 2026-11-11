@@ -7,7 +7,7 @@ pool:
     - Agent.OS -equals Windows_NT
 
 variables:
-  sonarConnection: SonarQube
+  sonarConnection: sonarqube
   appProjectKey: ITM_App---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET_e13968ab-1ea5-4560-be83-1bfb71d5b096
   injectorProjectKey: ITM_Iny---EAC-en-etapa-de-construcci-n-de-WS-RESTful-en-ASPNET_bbf7d49a-bc02-4286-9815-44201d1b99c3
   javaHome: C:\ProgramData\ITM-Lab\services\jdk-21.0.13+9

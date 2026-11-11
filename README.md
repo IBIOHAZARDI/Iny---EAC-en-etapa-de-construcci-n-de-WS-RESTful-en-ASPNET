@@ -55,7 +55,7 @@ reglas para código de pruebas y no calcula las mismas métricas que para códig
 principal.
 
 Requiere la extensión SonarQube Server para Azure DevOps con las tareas versión
-8, la conexión de servicio `SonarQube`, un token con permiso de análisis para
+8, la conexión de servicio `sonarqube`, un token con permiso de análisis para
 ambos proyectos, acceso del agente a SonarQube en la EC2 y el JDK indicado en el
 YAML. Las claves de proyectos y la ruta del JDK corresponden al laboratorio y
 deben ajustarse en otra instalación. Se clona `main` de la aplicación y se
