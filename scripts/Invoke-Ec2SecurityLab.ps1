@@ -128,10 +128,13 @@ try {
             $processes += $process
             Wait-Health -Url $scenario.Base -Process $process
             & (Join-Path $PSScriptRoot 'Invoke-Ec2ZapScan.ps1') -Scenario $scenario.Name -BaseUrl $scenario.Base -Work $work -Results $results
-            if (-not $process.HasExited) {
-                Stop-Process -Id $process.Id -ErrorAction Stop
-                $process.WaitForExit()
+            $process.Refresh()
+            if ($process.HasExited) {
+                throw "Scenario $($scenario.Name) API exited during its ZAP scan; inspect the published logs."
             }
+            Wait-Health -Url $scenario.Base -Process $process
+            Stop-Process -Id $process.Id -ErrorAction Stop
+            $process.WaitForExit()
         }
     }
     if ($rates.A.Total -ne $rates.B.Total) {

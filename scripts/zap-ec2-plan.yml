@@ -22,20 +22,28 @@ jobs:
   - type: requestor
     requests:
       - name: authenticated orders
-        url: '${ZAP_LAB_URL}/api/v2/orders'
+        url: '${ZAP_LAB_URL}/api/v2/orders?zap=lab'
         method: GET
+        headers:
+          - 'Authorization: Bearer ${ZAP_LAB_TOKEN}'
         responseCode: 200
       - name: products
         url: '${ZAP_LAB_URL}/api/v2/products'
         method: GET
+        headers:
+          - 'Authorization: Bearer ${ZAP_LAB_TOKEN}'
         responseCode: 200
       - name: product search
         url: '${ZAP_LAB_URL}/api/v2/products/search?name=lab'
         method: GET
+        headers:
+          - 'Authorization: Bearer ${ZAP_LAB_TOKEN}'
         responseCode: 200
       - name: product category
         url: '${ZAP_LAB_URL}/api/v2/products/by-category?category=lab'
         method: GET
+        headers:
+          - 'Authorization: Bearer ${ZAP_LAB_TOKEN}'
         responseCode: 200
   - type: activeScan
     parameters:
@@ -45,7 +53,7 @@ jobs:
       threadPerHost: 2
     policyDefinition:
       defaultStrength: Low
-      defaultThreshold: Off
+      defaultThreshold: 'Off'
       rules:
         - id: 40018
           name: SQL injection
@@ -53,6 +61,9 @@ jobs:
         - id: 40012
           name: reflected XSS
           threshold: Medium
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
   - type: report
     parameters:
       template: risk-confidence-html

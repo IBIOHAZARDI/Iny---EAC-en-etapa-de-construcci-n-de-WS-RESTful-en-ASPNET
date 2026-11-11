@@ -29,6 +29,8 @@ Si no se define un endpoint HTTP (A10) o HTTPS (C01/C02), el assert retorna sin 
 | **B — Parcheada** | VulnerableApi_Patched | 5002 | Confirmar que las correcciones superan los controles |
 
 El pipeline de Azure DevOps ([azure-pipelines.yml](azure-pipelines.yml)) integra SonarQube, los escenarios A y B de `SecurityAsserts` y OWASP ZAP contra la API vulnerable. Quality gate: SonarQube publica su quality gate; ZAP publica el reporte y puede bloquear el pipeline mediante `zapFailOnAlert=true`; los resultados TRX quedan publicados aun cuando los escenarios vulnerables detecten fallos esperados.
+Este pipeline anterior es manual: no se dispara por pushes ni PR. Usa el pool
+`Default` y no está configurado para el agente del laboratorio EC2.
 
 Para el laboratorio EC2 Windows existe un pipeline adicional, de ejecución manual,
 en [azure-pipelines-ec2.yml](azure-pipelines-ec2.yml). Utiliza el pool
@@ -48,11 +50,31 @@ ni ZAP** y no sustituye al pipeline de seguridad completo.
 
 Para el análisis estático en la misma EC2 se dispone de
 [azure-pipelines-sonar-ec2.yml](azure-pipelines-sonar-ec2.yml), un pipeline manual
-independiente que no inicia las APIs ni ejecuta ZAP. Analiza ambas APIs en el
+que analiza ambas APIs en el
 proyecto de SonarQube de la aplicación y `SecurityAsserts` en el proyecto del
 inyector. Este último se analiza como proyecto de pruebas: SonarQube aplica las
 reglas para código de pruebas y no calcula las mismas métricas que para código
 principal.
+
+Después de los dos análisis ejecuta los asserts A/B y un escaneo activo ZAP
+acotado para cada escenario, con una base SQLite nueva e independiente de la
+usada por los asserts. La API B permanece en Production. Los resultados TRX,
+logs e informes se publican como artefacto `ec2-security-lab`. ZAP inicia sesión
+con el usuario sintético `usera@test.local`; antes del escaneo comprueba que una
+solicitud a órdenes reciba HTTP 200 a través de ZAP.
+
+El plan [zap-ec2-plan.yml](scripts/zap-ec2-plan.yml) solo siembra las rutas
+GET v2 de productos, búsqueda por nombre, categoría y órdenes, y ejecuta las
+reglas activas de inyección SQL y XSS reflejado. No importa automáticamente el
+OpenAPI ni escanea rutas de archivos, diagnósticos, callbacks, XML u otras rutas:
+**no es un escaneo completo de todas las vulnerabilidades**. Cada escaneo activo
+está limitado a 20 minutos y cada regla a 5 minutos; esos límites pueden dejar
+pruebas sin completar. Las alertas se publican sin bloquear el pipeline; los
+errores o advertencias del plan, incluyendo un fallo de autenticación, sí lo
+bloquean. También se exige que cada regla haya enviado solicitudes activas.
+El token sintético se elimina de los informes y logs publicados, pero estos
+pueden contener otros datos del laboratorio: limita el acceso a los artefactos.
+No utilizar datos ni credenciales reales.
 
 Requiere la variable secreta `sonarAnalysisToken` configurada en el pipeline de
 Azure DevOps, con permisos para analizar y consultar ambos proyectos en
@@ -61,8 +83,9 @@ SonarScanner para .NET fijado en [.config/dotnet-tools.json](.config/dotnet-tool
 el JDK indicado en el YAML y SonarQube local. El escáner .NET no admite
 `SONAR_TOKEN`: el token se pasa como argumento durante `begin` y `end`, por lo
 que podría ser visible temporalmente para procesos con permisos suficientes
-en la EC2. Usa un token de alcance limitado y no ejecutes la API vulnerable
-en esa cuenta. Azure DevOps debe enmascarar el valor en los logs.
+en la EC2. Usa un token de alcance limitado. Azure DevOps debe enmascarar el
+valor en los logs. Los análisis se ejecutan antes de iniciar la API vulnerable;
+esto no constituye aislamiento de procesos ni protege otros secretos en la EC2.
 
 Las claves de proyectos y la ruta del JDK corresponden al laboratorio y deben
 ajustarse en otra instalación. Solo se admite la rama `main`; la extensión de

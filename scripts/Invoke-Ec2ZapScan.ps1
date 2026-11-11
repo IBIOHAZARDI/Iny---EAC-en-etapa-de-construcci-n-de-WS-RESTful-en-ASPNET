@@ -30,38 +30,72 @@ foreach ($path in @($java, $ZapJar, $plan)) {
 $login = @{ email = 'usera@test.local'; password = 'UserA123!' } | ConvertTo-Json -Compress
 $response = Invoke-RestMethod -Uri "$BaseUrl/api/v2/auth/login" -Method Post `
     -ContentType 'application/json' -Body $login -SkipCertificateCheck -TimeoutSec 15
-if ([string]::IsNullOrWhiteSpace($response.token) -or $response.role -ne 'user') {
+if ($response.token -notmatch '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$' -or $response.role -ne 'user') {
     throw "Scenario $Scenario did not return the expected synthetic user token."
 }
 
-$names = @('ZAP_LAB_URL', 'ZAP_LAB_TOKEN', 'ZAP_LAB_RESULTS', 'ZAP_LAB_SCENARIO')
+$names = @('ZAP_LAB_URL', 'ZAP_LAB_RESULTS', 'ZAP_LAB_SCENARIO')
 $previous = @{}
 foreach ($name in $names) { $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
 try {
     $env:ZAP_LAB_URL = $BaseUrl
-    $env:ZAP_LAB_TOKEN = $response.token
-    $env:ZAP_LAB_RESULTS = $Results
     $env:ZAP_LAB_SCENARIO = $Scenario
     $zapHome = Join-Path $Work "zap-$Scenario"
     New-Item -ItemType Directory -Path $zapHome -ErrorAction Stop | Out-Null
-    $stdout = Join-Path $Results "zap-$Scenario-stdout.log"
-    $stderr = Join-Path $Results "zap-$Scenario-stderr.log"
-    $arguments = @('-Xmx768m', '-jar', "`"$ZapJar`"", '-cmd', '-dir', "`"$zapHome`"", '-autorun', "`"$plan`"")
-    $process = Start-Process -FilePath $java -ArgumentList $arguments -RedirectStandardOutput $stdout `
-        -RedirectStandardError $stderr -PassThru
+    $env:ZAP_LAB_RESULTS = $zapHome
+    $runtimePlan = Join-Path $zapHome 'plan.yml'
+    $planText = (Get-Content -LiteralPath $plan -Raw).Replace('${ZAP_LAB_TOKEN}', $response.token)
+    [System.IO.File]::WriteAllText($runtimePlan, $planText, [System.Text.UTF8Encoding]::new($false))
+    $planText = $null
+    $stdout = Join-Path $zapHome 'stdout.log'
+    $stderr = Join-Path $zapHome 'stderr.log'
+    $arguments = @('-Xmx768m', '-jar', "`"$ZapJar`"", '-cmd', '-dir', "`"$zapHome`"", '-autorun', "`"$runtimePlan`"")
+    $process = $null
     try {
+        $process = Start-Process -FilePath $java -ArgumentList $arguments -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr -PassThru
         if (-not $process.WaitForExit(1800000)) {
             throw "ZAP scenario $Scenario exceeded the 30-minute process timeout."
         }
         if ($process.ExitCode -ne 0) {
             throw "ZAP scenario $Scenario failed with exit code $($process.ExitCode); inspect its logs."
         }
-    } finally {
-        $process.Refresh()
-        if (-not $process.HasExited) {
-            Stop-Process -Id $process.Id -ErrorAction Stop
-            $process.WaitForExit()
+        $zapLog = Join-Path $zapHome 'zap.log'
+        if (-not (Test-Path -LiteralPath $zapLog -PathType Leaf)) {
+            throw "ZAP scenario $Scenario did not create its diagnostic log."
         }
+        $counts = @{ SqlInjectionScanRule = 0; CrossSiteScriptingScanRule = 0 }
+        foreach ($line in Get-Content -LiteralPath $zapLog) {
+            if ($line -match 'completed host/plugin .+ \| (SqlInjectionScanRule|CrossSiteScriptingScanRule) in .+ with (\d+) message\(s\) sent') {
+                $counts[$Matches[1]] += [int]$Matches[2]
+            }
+        }
+        foreach ($rule in $counts.Keys) {
+            if ($counts[$rule] -lt 1) {
+                throw "ZAP scenario $Scenario sent no verified active requests for $rule."
+            }
+            Write-Host "ZAP scenario ${Scenario}: $rule sent $($counts[$rule]) active requests."
+        }
+    } finally {
+        if ($process) {
+            $process.Refresh()
+            if (-not $process.HasExited) {
+                Stop-Process -Id $process.Id -ErrorAction Stop
+                $process.WaitForExit()
+            }
+        }
+        foreach ($log in @(@{ Source = $stdout; Name = "zap-$Scenario-stdout.log" }, @{ Source = $stderr; Name = "zap-$Scenario-stderr.log" })) {
+            if (Test-Path -LiteralPath $log.Source -PathType Leaf) {
+                $text = [System.IO.File]::ReadAllText($log.Source).Replace($response.token, '[REDACTED LAB TOKEN]')
+                [System.IO.File]::WriteAllText((Join-Path $Results $log.Name), $text, [System.Text.UTF8Encoding]::new($false))
+            }
+        }
+        $privateReport = Join-Path $zapHome "zap-$Scenario.html"
+        if (Test-Path -LiteralPath $privateReport -PathType Leaf) {
+            $reportText = [System.IO.File]::ReadAllText($privateReport).Replace($response.token, '[REDACTED LAB TOKEN]')
+            [System.IO.File]::WriteAllText((Join-Path $Results "zap-$Scenario.html"), $reportText, [System.Text.UTF8Encoding]::new($false))
+        }
+        Remove-Item -LiteralPath $runtimePlan -ErrorAction Stop
     }
     $report = Join-Path $Results "zap-$Scenario.html"
     if (-not (Test-Path -LiteralPath $report -PathType Leaf)) {
